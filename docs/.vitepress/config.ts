@@ -16,7 +16,7 @@ export default defineConfig({
       },
     },
     optimizeDeps: {
-      include: ['vue'],
+      include: ['vue', 'react', 'react-dom'],
     },
   },
   themeConfig: {
