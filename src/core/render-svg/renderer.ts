@@ -15,26 +15,6 @@ export interface SvgRenderOptions {
   viewBox?: string;
 }
 
-function worldToScreen(x: number, y: number, viewport: ViewportState): { sx: number; sy: number } {
-  return {
-    sx: (x + viewport.panX) * viewport.zoom,
-    sy: (y + viewport.panY) * viewport.zoom,
-  };
-}
-
-function buildGridSvg(viewport: ViewportState, theme: RenderTheme): string {
-  const patternId = `grid-pattern`;
-  return `
-    <defs>
-      <pattern id="${patternId}" width="20" height="20" patternUnits="userSpaceOnUse" 
-        patternTransform="translate(${viewport.panX}, ${viewport.panY}) scale(${viewport.zoom})">
-        <line x1="0" y1="0" x2="20" y2="0" stroke="var(--ce-grid)" stroke-width="0.2" stroke-dasharray="2,4" />
-        <line x1="0" y1="0" x2="0" y2="20" stroke="var(--ce-grid)" stroke-width="0.2" stroke-dasharray="2,4" />
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#${patternId})" pointer-events="none" />
-  `.trim();
-}
 
 
 function buildConnectionPath(from: { x: number; y: number }, to: { x: number; y: number }): string {
@@ -52,21 +32,22 @@ function buildConnectionPath(from: { x: number; y: number }, to: { x: number; y:
 }
 
 function isJunctionNode(node: ElementNode): boolean {
-  return node.circuitNode.type === 'parallel' && 
+  return node.circuitNode.type === 'parallel' &&
     (node.circuitNode as any).children?.length === 0;
 }
 
-function buildNodeElement(node: ElementNode, viewport: ViewportState, theme: RenderTheme, isSelected: boolean): string {
-  const { sx, sy } = worldToScreen(node.visualX, node.visualY, viewport);
-  const sw = node.width * viewport.zoom;
-  const sh = node.height * viewport.zoom;
+function buildNodeElement(node: ElementNode, theme: RenderTheme, isSelected: boolean): string {
+  const x = node.visualX;
+  const y = node.visualY;
+  const w = node.width;
+  const h = node.height;
 
   // Junction nodes render as dots, not boxes
   if (isJunctionNode(node)) {
-    const cx = sx + sw / 2;
-    const cy = sy + sh / 2;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
     return `<g id="${node.nodeId}" class="circuit-junction" data-node-id="${node.nodeId}">
-      <circle cx="${cx}" cy="${cy}" r="${3 * viewport.zoom}" fill="${theme.colors.stroke}" />
+      <circle cx="${cx}" cy="${cy}" r="3" fill="${theme.colors.stroke}" />
     </g>`;
   }
 
@@ -87,20 +68,20 @@ function buildNodeElement(node: ElementNode, viewport: ViewportState, theme: Ren
   const elementIdAttr = label ? ` data-element-id="${label}"` : '';
 
   return `
-    <g id="${node.nodeId}" transform="translate(${sx}, ${sy})" class="circuit-node" data-node-id="${node.nodeId}"${elementIdAttr}>
-      <rect class="node-hit" x="-4" y="-4" width="${sw + 8}" height="${sh + 22}" fill="transparent" />
-      <rect class="node-bg" x="-2" y="-2" width="${sw + 4}" height="${sh + 4}"
+    <g id="${node.nodeId}" transform="translate(${x}, ${y})" class="circuit-node" data-node-id="${node.nodeId}"${elementIdAttr}>
+      <rect class="node-hit" x="-4" y="-4" width="${w + 8}" height="${h + 22}" fill="transparent" />
+      <rect class="node-bg" x="-2" y="-2" width="${w + 4}" height="${h + 4}"
         fill="none" stroke="${selectionStroke}" stroke-width="${selectionWidth}"
         rx="6" stroke-dasharray="${isSelected ? '0' : ''}" />
-      <svg width="${sw}" height="${sh}" viewBox="0 0 ${theme.elementWidth} ${theme.elementHeight}">
+      <svg width="${w}" height="${h}" viewBox="0 0 ${theme.elementWidth} ${theme.elementHeight}">
         ${innerSvg}
       </svg>
-      ${label ? `<text class="node-label" x="${sw / 2}" y="${sh + 14}" text-anchor="middle" font-size="${theme.fontSize}" font-family="${theme.fontFamily}" fill="${theme.colors.text}">${label}</text>` : ''}
+      ${label ? `<text class="node-label" x="${w / 2}" y="${h + 14}" text-anchor="middle" font-size="${theme.fontSize}" font-family="${theme.fontFamily}" fill="${theme.colors.text}">${label}</text>` : ''}
     </g>
   `;
 }
 
-function buildConnectionElement(conn: Connection, graph: EditableGraph, viewport: ViewportState, theme: RenderTheme): string {
+function buildConnectionElement(conn: Connection, graph: EditableGraph, theme: RenderTheme): string {
   const fromNode = graph.nodes.get(conn.fromNodeId);
   const toNode = graph.nodes.get(conn.toNodeId);
 
@@ -111,20 +92,20 @@ function buildConnectionElement(conn: Connection, graph: EditableGraph, viewport
 
   if (!fromPort || !toPort) return '';
 
-  // Port positions are already in world coordinates
-  const fp = worldToScreen(fromPort.x, fromPort.y, viewport);
-  const tp = worldToScreen(toPort.x, toPort.y, viewport);
-  const path = buildConnectionPath({ x: fp.sx, y: fp.sy }, { x: tp.sx, y: tp.sy });
+  // Port positions are already in world coordinates — use them directly
+  const path = buildConnectionPath({ x: fromPort.x, y: fromPort.y }, { x: toPort.x, y: toPort.y });
 
   return `<path d="${path}" stroke="${theme.colors.stroke}" stroke-width="${theme.strokeWidth}" fill="none" class="circuit-connection" data-from="${conn.fromNodeId}" data-to="${conn.toNodeId}" />`;
 }
 
 export function renderCircuit(
   graph: EditableGraph,
-  viewport: ViewportState,
+  _viewport: ViewportState,
   options: SvgRenderOptions,
 ): string {
   const theme = options.theme ?? DEFAULT_THEME;
+  // SVG is rendered in pure world coordinates.
+  // The pan-zoom plugin applies CSS transform for pan/zoom — no viewport baked in here.
   const width = options.width ?? '100%';
   const height = options.height ?? '100%';
   const viewBoxAttr = options.viewBox ? ` viewBox="${options.viewBox}"` : '';
@@ -134,17 +115,15 @@ export function renderCircuit(
 
   for (const node of graph.nodes.values()) {
     const isSelected = options.selectedNodeIds?.has(node.nodeId) ?? false;
-    nodeElements.push(buildNodeElement(node, viewport, theme, isSelected));
+    nodeElements.push(buildNodeElement(node, theme, isSelected));
   }
 
   for (const conn of graph.connections) {
-    connectionElements.push(buildConnectionElement(conn, graph, viewport, theme));
+    connectionElements.push(buildConnectionElement(conn, graph, theme));
   }
 
-  const grid = options.showGrid !== false ? buildGridSvg(viewport, theme) : '';
-
   return `
-<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"${viewBoxAttr} class="circuit-editor">
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"${viewBoxAttr} class="circuit-editor" overflow="visible">
   <style>
     .circuit-node { cursor: pointer; }
     .circuit-node:hover .node-bg { stroke: ${theme.colors.highlight}; stroke-width: 2; }
@@ -152,7 +131,6 @@ export function renderCircuit(
     .circuit-connection:hover { stroke: ${theme.colors.highlight}; stroke-width: 2; }
     .circuit-junction { pointer-events: none; }
   </style>
-  ${grid}
   <g id="connections">${connectionElements.join('')}</g>
   <g id="nodes">${nodeElements.join('')}</g>
 </svg>`.trim();
