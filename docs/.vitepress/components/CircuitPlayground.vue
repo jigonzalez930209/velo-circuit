@@ -1,8 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, computed, nextTick } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useData } from 'vitepress';
 import type { CircuitExample } from '../theme/circuits';
 import { sampleCircuits } from '../theme/circuits';
+import VanillaPreview from './VanillaPreview.vue';
+import ReactPreview from './ReactPreview.vue';
+import VuePreview from './VuePreview.vue';
+import SveltePreview from './SveltePreview.vue';
+import AngularPreview from './AngularPreview.vue';
+import AstroPreview from './AstroPreview.vue';
 
 const props = withDefaults(defineProps<{
   circuits?: CircuitExample[];
@@ -20,53 +26,22 @@ const dslInput = ref('');
 const diagnosticsOutput = ref<{ type: string; message: string }[]>([]);
 const activeTab = ref('preview');
 const framework = ref('react');
-const frameworkContainerRef = ref<HTMLDivElement | null>(null);
-
-let editorModules: any = null;
-let activeInstance: any = null;
+const activePreviewRef = ref<any>(null);
 
 const circuitsList = computed(() => props.circuits || sampleCircuits);
 
-function updateDiagnostics() {
-  if (!editorModules) return;
-  const { validate, parseBoukamp } = editorModules.core;
-  
-  const result = parseBoukamp(dslInput.value);
-  if (result && 'type' in result && (result.type === 'lex' || result.type === 'parse')) {
-    diagnosticsOutput.value = [{ type: 'error', message: result.message }];
-    return;
-  }
+// Map tabs to preview components
+const previewComponents: Record<string, any> = {
+  preview: VanillaPreview,
+  vanilla: VanillaPreview,
+  react: ReactPreview,
+  vue: VuePreview,
+  svelte: SveltePreview,
+  angular: AngularPreview,
+  astro: AstroPreview,
+};
 
-  const validation = validate(result);
-  diagnosticsOutput.value = validation.issues.map((i: any) => ({
-    type: i.type,
-    message: i.message,
-  }));
-}
-
-function onDslInputChange() {
-  updateDiagnostics();
-  if (activeInstance && activeInstance.setValue) {
-    activeInstance.setValue(dslInput.value);
-  }
-}
-
-function copyDsl() {
-  navigator.clipboard.writeText(dslInput.value).catch(() => {});
-}
-
-function copySvg() {
-  const svg = frameworkContainerRef.value?.querySelector('svg')?.outerHTML;
-  if (svg) navigator.clipboard.writeText(svg).catch(() => {});
-}
-
-function centerView() {
-  if (activeInstance && activeInstance.emit) {
-    activeInstance.emit('fit-view');
-  } else if (activeInstance && activeInstance.fitView) {
-    activeInstance.fitView();
-  }
-}
+const currentPreview = computed(() => previewComponents[activeTab.value] || VanillaPreview);
 
 const frameworkCode = {
   react: `import React, { useState } from 'react';
@@ -92,111 +67,77 @@ const { containerRef } = useCircuitEditor({ value: dsl });
 <\/script>
 <div use:circuitEditor={{ value: dsl }} style="height: 500px"></div>`,
   angular: `@Component({
-  template: '<circuit-editor [initialDsl]="dsl" style="height: 500px"></circuit-editor>'
+  selector: 'circuit-editor',
+  template: \`<div #container style="width:100%;height:100%;"></div>\`,
 })
-export class Playground { dsl = '${dslInput.value}'; }`,
+export class CircuitEditorComponent implements AfterViewInit {
+  @Input() initialDsl = '${dslInput.value}';
+  private editor = createEditor();
+
+  ngAfterViewInit() {
+    this.editor.mount(this.container.nativeElement, {
+      initialDsl: this.initialDsl
+    });
+  }
+}`,
   astro: `<div id="editor" style="height: 500px"></div>
 <script>
-  import { createEditor, allPlugins } from 'velo-circuit-editor';
-  createEditor({ plugins: allPlugins() }).mount(document.getElementById('editor'));
+  import { mountAstroCircuitEditor } from 'velo-circuit-editor/adapters/astro';
+
+  const editor = mountAstroCircuitEditor(
+    document.getElementById('editor'),
+    { initialDsl: '${dslInput.value}' }
+  );
 <\/script>`
 };
 
-async function loadModules() {
-  if (editorModules) return editorModules;
-  const [core, react, reactDom, reactAdapter, vueAdapter, svelteAdapter, vanillaAdapter] = await Promise.all([
-    import('../../../src/core/index.ts'),
-    import('react'),
-    import('react-dom/client'),
-    import('../../../src/adapters/react/index.ts'),
-    import('../../../src/adapters/vue/index.ts'),
-    import('../../../src/adapters/svelte/index.ts'),
-    import('../../../src/adapters/vanilla/index.ts'),
-  ]);
-  editorModules = { core, react, reactDom, reactAdapter, vueAdapter, svelteAdapter, vanillaAdapter };
-  return editorModules;
+// Core module loaded once
+let coreModule: any = null;
+
+async function loadCore() {
+  if (!coreModule) {
+    coreModule = await import('../../../src/core/index.ts');
+  }
+  return coreModule;
 }
 
-async function mountFramework(framework: string) {
-  if (!frameworkContainerRef.value) return;
-  if (activeInstance) {
-    if (activeInstance.destroy) activeInstance.destroy();
-    if (activeInstance.unmount) activeInstance.unmount();
-    activeInstance = null;
-  }
-  frameworkContainerRef.value.innerHTML = '';
+async function updateDiagnostics() {
+  const core = await loadCore();
+  const { validate, parseBoukamp } = core;
 
-  const { core, react, reactDom, reactAdapter, vueAdapter, svelteAdapter, vanillaAdapter } = await loadModules();
-  const dsl = dslInput.value;
-
-  switch (framework) {
-    case 'preview':
-    case 'vanilla':
-      activeInstance = vanillaAdapter.mountCircuitEditor({
-        container: frameworkContainerRef.value,
-        initialDsl: dsl,
-      });
-      break;
-    case 'vue':
-      activeInstance = vueAdapter.createVueCircuitEditor(frameworkContainerRef.value, {
-        initialDsl: dsl,
-        onDslChange: (newDsl: string) => { 
-          dslInput.value = newDsl; 
-          updateDiagnostics();
-        }
-      });
-      break;
-    case 'react':
-      const root = reactDom.createRoot(frameworkContainerRef.value);
-      const ReactApp = () => {
-        const [val, setVal] = react.useState(dsl);
-        // Use the ACTUAL React adapter hook
-        const { containerRef } = reactAdapter.useCircuitEditor({ 
-          value: val, 
-          onDslChange: (newDsl) => {
-            setVal(newDsl);
-            dslInput.value = newDsl;
-            updateDiagnostics();
-          } 
-        });
-        return react.createElement('div', { 
-          ref: containerRef, 
-          style: { height: '100%', width: '100%', minHeight: '400px' } 
-        });
-      };
-      root.render(react.createElement(ReactApp));
-      activeInstance = { unmount: () => root.unmount() };
-      break;
-    case 'svelte':
-      const svelteContainer = document.createElement('div');
-      svelteContainer.style.height = '100%';
-      frameworkContainerRef.value.appendChild(svelteContainer);
-      
-      // Use the ACTUAL Svelte adapter action
-      const svelteAction = svelteAdapter.circuitEditor(svelteContainer, {
-        value: dsl,
-      });
-      
-      svelteContainer.addEventListener('change', (e: any) => {
-        dslInput.value = e.detail;
-        updateDiagnostics();
-      });
-
-      activeInstance = { destroy: () => svelteAction.destroy() };
-      break;
+  const result = parseBoukamp(dslInput.value);
+  if (result && 'type' in result && (result.type === 'lex' || result.type === 'parse')) {
+    diagnosticsOutput.value = [{ type: 'error', message: result.message }];
+    return;
   }
-  
-  if (isDark.value) {
-     frameworkContainerRef.value.querySelector('.ce-editor')?.classList.add('ce-dark');
-  }
+
+  const validation = validate(result);
+  diagnosticsOutput.value = validation.issues.map((i: any) => ({
+    type: i.type,
+    message: i.message,
+  }));
+}
+
+function onDslInputChange() {
   updateDiagnostics();
+  activePreviewRef.value?.setValue(dslInput.value);
 }
 
-watch(activeTab, (newTab) => {
-  if (newTab !== 'code') {
-    nextTick(() => mountFramework(newTab));
+function copyDsl() {
+  navigator.clipboard.writeText(dslInput.value).catch(() => {});
+}
+
+function copySvg() {
+  // Get SVG from the current preview's container
+  const svgEl = document.querySelector('.framework-mount-point svg');
+  if (svgEl) {
+    navigator.clipboard.writeText(svgEl.outerHTML).catch(() => {});
   }
-});
+}
+
+function centerView() {
+  activePreviewRef.value?.centerView();
+}
 
 watch(isDark, (val) => {
   const editors = document.querySelectorAll('.ce-editor');
@@ -211,24 +152,20 @@ function selectCircuit(circuitId: string) {
   const circuit = circuitsList.value.find(c => c.id === circuitId);
   if (circuit) {
     dslInput.value = circuit.dsl;
-    if (activeTab.value !== 'code') {
-      mountFramework(activeTab.value);
-    }
+    activePreviewRef.value?.setValue(circuit.dsl);
+    updateDiagnostics();
   }
+}
+
+function onPreviewDslChange(newDsl: string) {
+  dslInput.value = newDsl;
+  updateDiagnostics();
 }
 
 onMounted(async () => {
   const circuit = circuitsList.value.find(c => c.id === activeCircuit.value) || circuitsList.value[0];
   dslInput.value = circuit.dsl;
-  await nextTick();
-  mountFramework('preview');
-});
-
-onBeforeUnmount(() => {
-  if (activeInstance) {
-    if (activeInstance.destroy) activeInstance.destroy();
-    if (activeInstance.unmount) activeInstance.unmount();
-  }
+  await updateDiagnostics();
 });
 </script>
 
@@ -264,19 +201,20 @@ onBeforeUnmount(() => {
       <button :class="['tab-btn', { active: activeTab === 'react' }]" @click="activeTab = 'react'">React</button>
       <button :class="['tab-btn', { active: activeTab === 'vue' }]" @click="activeTab = 'vue'">Vue</button>
       <button :class="['tab-btn', { active: activeTab === 'svelte' }]" @click="activeTab = 'svelte'">Svelte</button>
+      <button :class="['tab-btn', { active: activeTab === 'angular' }]" @click="activeTab = 'angular'">Angular</button>
+      <button :class="['tab-btn', { active: activeTab === 'astro' }]" @click="activeTab = 'astro'">Astro</button>
       <button :class="['tab-btn', { active: activeTab === 'code' }]" @click="activeTab = 'code'">Code Example</button>
     </div>
 
     <div class="playground-main">
       <div v-show="activeTab === 'code'" class="code-view">
          <div class="code-tabs">
-            <button v-for="fw in ['react', 'vue', 'svelte', 'angular', 'astro']" :key="fw" class="code-tab-btn" @click="framework = fw">{{ fw }}</button>
+            <button v-for="fw in ['react', 'vue', 'svelte', 'angular', 'astro']" :key="fw" :class="['code-tab-btn', { active: framework === fw }]" @click="framework = fw">{{ fw }}</button>
          </div>
          <pre><code>{{ frameworkCode[framework as keyof typeof frameworkCode] }}</code></pre>
       </div>
-      
-      <div v-show="activeTab !== 'code'" class="playground-canvas" style="display: flex; flex-direction: column;">
-        <!-- Horizontal Panels at the top -->
+
+      <div v-show="activeTab !== 'code'" class="playground-canvas">
         <div class="horizontal-panels">
           <div class="panel panel-dsl">
             <div class="panel-header">
@@ -308,9 +246,13 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Canvas below panels -->
-        <div class="playground-canvas-wrapper" :style="{ height: height }">
-          <div ref="frameworkContainerRef" class="framework-mount-point"></div>
+        <div class="framework-mount-point" :style="{ height }">
+          <component
+            :is="currentPreview"
+            ref="activePreviewRef"
+            :initial-dsl="dslInput"
+            @dsl-change="onPreviewDslChange"
+          />
         </div>
       </div>
     </div>
@@ -486,17 +428,17 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-.playground-canvas-wrapper {
-  width: 100%;
-  background: #f0f2f5;
-  position: relative;
+.playground-canvas {
+  display: flex;
+  flex-direction: column;
 }
-.dark .playground-canvas-wrapper { background: #0f172a; }
 
 .framework-mount-point {
   width: 100%;
-  height: 100%;
+  background: #f0f2f5;
+  flex: 1;
 }
+.dark .framework-mount-point { background: #0f172a; }
 
 .code-view {
   padding: 16px;
@@ -521,6 +463,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .code-tab-btn:hover { background: #444; }
+.code-tab-btn.active { background: #555; color: white; }
 
 :deep(.ce-editor) {
   height: 100% !important;
