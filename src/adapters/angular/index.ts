@@ -1,4 +1,4 @@
-import { createEditor, type EditorInstance, type EditorEvent } from '../../core/index.js';
+import { createEditor, type EditorInstance, type EditorEvent, allPlugins } from '../../core/index.js';
 
 export interface AngularEditorAdapter {
   mount(container: HTMLElement, options?: { initialDsl?: string; width?: number; height?: number }): EditorInstance;
@@ -15,7 +15,7 @@ export interface AngularEditorAdapter {
 
 export function createAngularCircuitEditorAdapter(): AngularEditorAdapter {
   function mount(container: HTMLElement, options?: { initialDsl?: string; width?: number; height?: number }): EditorInstance {
-    const editor = createEditor();
+    const editor = createEditor({ plugins: allPlugins() });
     editor.mount(container, options);
     return editor;
   }

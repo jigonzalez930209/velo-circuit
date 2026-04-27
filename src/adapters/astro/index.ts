@@ -1,4 +1,4 @@
-import { createEditor, type EditorInstance, type EditorOptions } from '../../core/index.js';
+import { createEditor, type EditorInstance, type EditorOptions, allPlugins } from '../../core/index.js';
 
 export interface AstroEditorProps extends EditorOptions {
   id?: string;
@@ -7,7 +7,7 @@ export interface AstroEditorProps extends EditorOptions {
 const STORAGE = new Map<string, EditorInstance>();
 
 export function mountAstroCircuitEditor(element: HTMLElement, options?: AstroEditorProps): EditorInstance {
-  const editor = createEditor();
+  const editor = createEditor({ plugins: allPlugins() });
 
   editor.mount(element, options);
 
