@@ -81,5 +81,11 @@ export default defineConfig({
     socialLinks: [
       { icon: 'github', link: 'https://github.com/velo-circuit/velo-circuit' },
     ],
+    search: {
+      provider: 'local',
+      options: {
+        detailedView: true,
+      },
+    },
   },
 });
