@@ -134,14 +134,19 @@ export function createEditor(editorOpts?: { plugins?: EditorPlugin[] }): EditorI
   }
 
   function render(): string {
-    const viewport = store.getViewport();
     const selection = store.getSelection();
     const graph = rebuildGraph();
 
-    return renderCircuit(graph, viewport, {
-      width: viewport.width || DEFAULT_WIDTH,
-      height: viewport.height || DEFAULT_HEIGHT,
-      showGrid: true,
+    // Use a neutral viewport — pan/zoom is handled entirely by the CSS
+    // transform in pan-zoom.plugin. We render in pure world coordinates.
+    const neutralViewport = { zoom: 1, panX: 0, panY: 0, width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT };
+
+    return renderCircuit(graph, neutralViewport, {
+      // Don't constrain SVG size — it should be as large as the content
+      // (overflow:visible on the SVG element handles clipping)
+      width: DEFAULT_WIDTH,
+      height: DEFAULT_HEIGHT,
+      showGrid: false,
       selectedNodeIds: selection.selectedNodeIds,
     });
   }
