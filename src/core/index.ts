@@ -1,0 +1,20 @@
+export * from './domain/index.js';
+export * from './state/index.js';
+export * from './parser-bridge/index.js';
+export * from './layout/index.js';
+export * from './render-svg/index.js';
+export * from './editor/index.js';
+export * from './plugins/index.js';
+
+export { createEditor, type EditorInstance, type EditorOptions, type EditorEvent, type EditorEventType, type EventHandler, type InsertMode } from './editor/index.js';
+export { createStore, type EditorStore } from './state/index.js';
+export { createAdapter, type CircuitParserAdapter, parseBoukamp, serialize, validate, tokenize } from './parser-bridge/index.js';
+export { buildLayout, computeBounds, type LayoutOptions, DEFAULT_LAYOUT_OPTIONS } from './layout/index.js';
+export { renderCircuit, renderCircuitToElement, extractSvgString, renderCircuitEx, renderDocument, extractSvgSnapshot, exportSvgWithStyles, renderDslToSvg, type SvgRenderOptions, type RenderOptions, type InteractionOverlay } from './render-svg/index.js';
+export { DEFAULT_THEME, DARK_THEME, getTheme, toggleTheme, buildThemeCSS, type RenderTheme, type ThemeColors, type ThemeMode } from './render-svg/index.js';
+export { createViewportController, parseWheelZoom, parsePointerPan, getZoomLevelLabel, type ViewportController } from './render-svg/index.js';
+export { buildEquationEditorHTML, buildEquationEditorCSS, astToChips, attachEquationEditorEvents, type EquationEditorConfig } from './editor/dsl-equation-editor.js';
+export { buildContextMenuHTML, buildContextMenuCSS } from './editor/interaction.js';
+export type { ParseError } from './parser-bridge/parser.js';
+export { allPlugins, minimalPlugins } from './plugins/index.js';
+export type { EditorPlugin, PluginContext } from './plugins/types.js';
