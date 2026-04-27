@@ -26,12 +26,7 @@ export interface RenderOptions {
   height: number;
 }
 
-function worldToScreen(x: number, y: number, viewport: ViewportState): { sx: number; sy: number } {
-  return {
-    sx: (x + viewport.panX) * viewport.zoom,
-    sy: (y + viewport.panY) * viewport.zoom,
-  };
-}
+
 
 function buildGridLayer(width: number, height: number, viewport: ViewportState, theme: RenderTheme): string {
   const gridLines: string[] = [];
@@ -61,23 +56,23 @@ function isJunctionNode(node: ElementNode): boolean {
 
 function buildNodeElement(
   node: ElementNode,
-  viewport: ViewportState,
   theme: RenderTheme,
   isSelected: boolean,
   isFocused: boolean,
   showHandles: boolean,
 ): string {
-  const { sx, sy } = worldToScreen(node.visualX, node.visualY, viewport);
-  const sw = node.width * viewport.zoom;
-  const sh = node.height * viewport.zoom;
+  const x = node.visualX;
+  const y = node.visualY;
+  const w = node.width;
+  const h = node.height;
   const { strokeWidth, colors } = theme;
 
   // Junction nodes render as dots
   if (isJunctionNode(node)) {
-    const cx = sx + sw / 2;
-    const cy = sy + sh / 2;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
     return `<g id="node-${node.nodeId}" class="circuit-junction" data-node-id="${node.nodeId}">
-      <circle cx="${cx}" cy="${cy}" r="${3 * viewport.zoom}" fill="${colors.stroke}" />
+      <circle cx="${cx}" cy="${cy}" r="3" fill="${colors.stroke}" />
     </g>`;
   }
 
@@ -98,14 +93,14 @@ function buildNodeElement(
 
   let handleRects = '';
   if (showHandles && (isSelected || isFocused)) {
-    const handleSize = 8 * viewport.zoom;
-    const cx = sw / 2;
-    const cy = sh / 2;
+    const handleSize = 8;
+    const cx = w / 2;
+    const cy = h / 2;
     const handlePositions = [
       [0, cy],
-      [sw, cy],
+      [w, cy],
       [cx, 0],
-      [cx, sh],
+      [cx, h],
     ];
     for (const [hx, hy] of handlePositions) {
       handleRects += buildHandleRect(hx, hy, handleSize, theme);
@@ -113,12 +108,12 @@ function buildNodeElement(
   }
 
   return `
-    <g id="node-${node.nodeId}" class="circuit-node${isSelected ? ' selected' : ''}${isFocused ? ' focused' : ''}" data-node-id="${node.nodeId}" transform="translate(${sx}, ${sy})">
-      <rect class="node-bg" x="-2" y="-2" width="${sw + 4}" height="${sh + 4}" fill="none" stroke="${selectionColor}" stroke-width="${selStrokeWidth}" rx="6"/>
-      <svg class="node-symbol" width="${sw}" height="${sh}" viewBox="0 0 ${theme.elementWidth} ${theme.elementHeight}">
+    <g id="node-${node.nodeId}" class="circuit-node${isSelected ? ' selected' : ''}${isFocused ? ' focused' : ''}" data-node-id="${node.nodeId}" transform="translate(${x}, ${y})">
+      <rect class="node-bg" x="-2" y="-2" width="${w + 4}" height="${h + 4}" fill="none" stroke="${selectionColor}" stroke-width="${selStrokeWidth}" rx="6"/>
+      <svg class="node-symbol" width="${w}" height="${h}" viewBox="0 0 ${theme.elementWidth} ${theme.elementHeight}">
         ${innerSvg}
       </svg>
-      ${label ? `<text class="node-label" x="${sw / 2}" y="${sh + 14}" text-anchor="middle" font-size="${theme.fontSize}" font-family="${theme.fontFamily}" fill="${colors.text}">${label}</text>` : ''}
+      ${label ? `<text class="node-label" x="${w / 2}" y="${h + 14}" text-anchor="middle" font-size="${theme.fontSize}" font-family="${theme.fontFamily}" fill="${colors.text}">${label}</text>` : ''}
       ${handleRects}
     </g>
   `.trim();
@@ -133,7 +128,7 @@ function buildConnectionPath(from: { x: number; y: number }, to: { x: number; y:
   return `M ${from.x} ${from.y} C ${midX} ${from.y} ${midX} ${to.y} ${to.x} ${to.y}`;
 }
 
-function buildConnectionElement(conn: Connection, graph: EditableGraph, viewport: ViewportState, theme: RenderTheme): string {
+function buildConnectionElement(conn: Connection, graph: EditableGraph, theme: RenderTheme): string {
   const fromNode = graph.nodes.get(conn.fromNodeId);
   const toNode = graph.nodes.get(conn.toNodeId);
   if (!fromNode || !toNode) return '';
@@ -142,17 +137,17 @@ function buildConnectionElement(conn: Connection, graph: EditableGraph, viewport
   const toPort = toNode.ports.find(p => p.id === conn.toPortId);
   if (!fromPort || !toPort) return '';
 
-  const fp = worldToScreen(fromPort.x, fromPort.y, viewport);
-  const tp = worldToScreen(toPort.x, toPort.y, viewport);
-  const path = buildConnectionPath({ x: fp.sx, y: fp.sy }, { x: tp.sx, y: tp.sy });
+  // Port positions are in world coordinates — use directly
+  const path = buildConnectionPath({ x: fromPort.x, y: fromPort.y }, { x: toPort.x, y: toPort.y });
 
   return `<path class="circuit-connection" d="${path}" stroke="${theme.colors.stroke}" stroke-width="${theme.strokeWidth}" fill="none" data-from="${conn.fromNodeId}" data-to="${conn.toNodeId}"/>`;
 }
 
-function buildOverlayElement(overlay: InteractionOverlay, viewport: ViewportState, theme: RenderTheme): string {
-  const { sx, sy } = worldToScreen(overlay.x, overlay.y, viewport);
-  const sw = overlay.width * viewport.zoom;
-  const sh = overlay.height * viewport.zoom;
+function buildOverlayElement(overlay: InteractionOverlay, theme: RenderTheme): string {
+  const x = overlay.x;
+  const y = overlay.y;
+  const w = overlay.width;
+  const h = overlay.height;
 
   let color = theme.colors.highlight;
   let dasharray = '4,2';
@@ -168,16 +163,16 @@ function buildOverlayElement(overlay: InteractionOverlay, viewport: ViewportStat
     dasharray = '3,2';
   }
 
-  return `<rect class="overlay-${overlay.type}" x="${sx}" y="${sy}" width="${sw}" height="${sh}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="${dasharray}" rx="2" opacity="0.7"/>`;
+  return `<rect class="overlay-${overlay.type}" x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${color}" stroke-width="2" stroke-dasharray="${dasharray}" rx="2" opacity="0.7"/>`;
 }
 
-function buildDecoratorsLayer(overlays: InteractionOverlay[], viewport: ViewportState, theme: RenderTheme): string {
-  return `<g id="overlays" class="layer-overlays">${overlays.map(o => buildOverlayElement(o, viewport, theme)).join('')}</g>`;
+function buildDecoratorsLayer(overlays: InteractionOverlay[], theme: RenderTheme): string {
+  return `<g id="overlays" class="layer-overlays">${overlays.map(o => buildOverlayElement(o, theme)).join('')}</g>`;
 }
 
 export function renderCircuitEx(
   graph: EditableGraph,
-  viewport: ViewportState,
+  _viewport: ViewportState,
   options: RenderOptions,
 ): string {
   const resolvedTheme = options.themeMode ? getTheme(options.themeMode) : (options.theme ?? DEFAULT_THEME);
@@ -190,17 +185,16 @@ export function renderCircuitEx(
   for (const node of graph.nodes.values()) {
     const isSelected = options.selectedNodeIds?.has(node.nodeId) ?? false;
     const isFocused = node.nodeId === options.focusedNodeId;
-    nodeElements.push(buildNodeElement(node, viewport, resolvedTheme, isSelected, isFocused, options.showHandles ?? false));
+    nodeElements.push(buildNodeElement(node, resolvedTheme, isSelected, isFocused, options.showHandles ?? false));
   }
 
   for (const conn of graph.connections) {
-    connectionElements.push(buildConnectionElement(conn, graph, viewport, resolvedTheme));
+    connectionElements.push(buildConnectionElement(conn, graph, resolvedTheme));
   }
 
-  const grid = options.showGrid !== false ? buildGridLayer(width, height, viewport, resolvedTheme) : '';
-  const overlays = options.overlays ? buildDecoratorsLayer(options.overlays, viewport, resolvedTheme) : '';
+  const overlays = options.overlays ? buildDecoratorsLayer(options.overlays, resolvedTheme) : '';
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" class="circuit-editor" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="circuit-editor" width="${width}" height="${height}" overflow="visible">
   <defs>
     <style>
       .circuit-node { cursor: pointer; }
@@ -213,7 +207,6 @@ export function renderCircuitEx(
       .circuit-junction { pointer-events: none; }
     </style>
   </defs>
-  ${grid}
   <g id="connections" class="layer-connections">${connectionElements.join('')}</g>
   <g id="nodes" class="layer-nodes">${nodeElements.join('')}</g>
   ${overlays}
