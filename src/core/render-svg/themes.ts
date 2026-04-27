@@ -57,6 +57,7 @@ export function buildThemeCSS(theme: RenderTheme): string {
       --ce-error: ${theme.colors.error};
       --ce-warning: ${theme.colors.warning};
       --ce-grid: ${theme.colors.grid};
+      --ce-grid-dot: ${theme.colors.grid};
       --ce-stroke-width: ${theme.strokeWidth};
       --ce-font-size: ${theme.fontSize}px;
       --ce-font-family: ${theme.fontFamily};
