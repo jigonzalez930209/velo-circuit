@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Velo Circuit Editor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    #editor { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="editor"></div>
+  <script type="module">
+    import { createEditor, allPlugins } from '../../core/index.ts';
+
+    const editor = createEditor({ plugins: allPlugins() });
+    editor.mount(document.getElementById('editor'), {
+      initialDsl: 'R0-p(R1,C1)-Wo2',
+      width: 2000,
+      height: 1200,
+    });
+  </script>
+</body>
+</html>

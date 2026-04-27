@@ -1,0 +1,109 @@
+:root {
+  --circuit-primary: #4cc9f0;
+  --circuit-secondary: #4361ee;
+  --circuit-success: #22c55e;
+  --circuit-warning: #f59e0b;
+  --circuit-error: #ef4444;
+  --circuit-surface: #ffffff;
+  --circuit-surface-2: #f8fafc;
+  --circuit-border: #e2e8f0;
+  --circuit-text: #1e293b;
+  --circuit-text-secondary: #64748b;
+  --circuit-glass-border: rgba(148, 163, 184, 0.2);
+}
+
+.dark {
+  --circuit-surface: #0f172a;
+  --circuit-surface-2: #1e293b;
+  --circuit-border: #334155;
+  --circuit-text: #f1f5f9;
+  --circuit-text-secondary: #94a3b8;
+  --circuit-glass-border: rgba(148, 163, 184, 0.1);
+}
+
+.playground-wrapper {
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--circuit-border);
+  background: var(--circuit-surface);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.playground-chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: var(--circuit-surface-2);
+  border-bottom: 1px solid var(--circuit-border);
+  user-select: none;
+}
+
+.chrome-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.chrome-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.chrome-dot--red { background: #ff5f56; }
+.chrome-dot--yellow { background: #ffbd2e; }
+.chrome-dot--green { background: #27c93f; }
+
+.chrome-title {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--circuit-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.playground-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.playground-tab {
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--circuit-text-secondary);
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.playground-tab:hover {
+  background: var(--circuit-border);
+  color: var(--circuit-text);
+}
+
+.playground-tab.active {
+  background: var(--circuit-primary);
+  color: white;
+}
+
+.playground-container {
+  position: relative;
+  width: 100%;
+  min-height: 500px;
+}
+
+.playground-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--circuit-surface);
+}
