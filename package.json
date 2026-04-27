@@ -1,9 +1,48 @@
 {
-  "name": "velo-circuit-editor",
+  "name": "velo-circuit",
   "version": "0.1.0",
   "description": "Framework-agnostic SVG circuit editor based on the Boukamp DSL",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
+    },
+    "./vanilla": {
+      "import": "./dist/adapters/vanilla/index.js",
+      "types": "./dist/adapters/vanilla/index.d.ts"
+    },
+    "./react": {
+      "import": "./dist/adapters/react/index.js",
+      "types": "./dist/adapters/react/index.d.ts"
+    },
+    "./vue": {
+      "import": "./dist/adapters/vue/index.js",
+      "types": "./dist/adapters/vue/index.d.ts"
+    },
+    "./svelte": {
+      "import": "./dist/adapters/svelte/index.js",
+      "types": "./dist/adapters/svelte/index.d.ts"
+    },
+    "./angular": {
+      "import": "./dist/adapters/angular/index.js",
+      "types": "./dist/adapters/angular/index.d.ts"
+    },
+    "./astro": {
+      "import": "./dist/adapters/astro/index.js",
+      "types": "./dist/adapters/astro/index.d.ts"
+    }
+  },
+  "main": "./dist/core/index.js",
+  "types": "./dist/core/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

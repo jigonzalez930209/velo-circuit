@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress';
 import { resolve } from 'path';
 
 export default defineConfig({
+  base: '/velo-circuit/',
   title: 'Velo Circuit Editor',
   description: 'Framework-agnostic SVG circuit editor based on the Boukamp DSL',
   head: [

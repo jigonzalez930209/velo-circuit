@@ -7,13 +7,19 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/core/index.ts'),
-      name: 'VeloCircuitEditor',
-      fileName: 'velo-circuit-editor',
-      formats: ['es', 'umd'],
+      entry: {
+        'core/index': resolve(__dirname, 'src/core/index.ts'),
+        'adapters/vanilla/index': resolve(__dirname, 'src/adapters/vanilla/index.ts'),
+        'adapters/react/index': resolve(__dirname, 'src/adapters/react/index.ts'),
+        'adapters/vue/index': resolve(__dirname, 'src/adapters/vue/index.ts'),
+        'adapters/svelte/index': resolve(__dirname, 'src/adapters/svelte/index.ts'),
+        'adapters/angular/index': resolve(__dirname, 'src/adapters/angular/index.ts'),
+        'adapters/astro/index': resolve(__dirname, 'src/adapters/astro/index.ts'),
+      },
+      formats: ['es'],
     },
     rollupOptions: {
-      external: [],
+      external: ['react', 'react-dom', 'vue', 'svelte', '@angular/core'],
       output: {
         globals: {},
       },
