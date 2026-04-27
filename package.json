@@ -1,0 +1,31 @@
+{
+  "name": "velo-circuit-editor",
+  "version": "0.1.0",
+  "description": "Framework-agnostic SVG circuit editor based on the Boukamp DSL",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc --project tsconfig.build.json",
+    "lint": "tsc --noEmit && echo \"ok\"",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "svelte": "^5.0.0",
+    "typescript": "^5.9.3",
+    "vitepress": "^1.6.3",
+    "vitest": "^2.1.9",
+    "vue": "^3.5.13"
+  },
+  "dependencies": {
+    "@types/node": "^25.6.0"
+  }
+}
