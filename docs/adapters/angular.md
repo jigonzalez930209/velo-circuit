@@ -1,8 +1,19 @@
 # Angular
 
+## Installation
+
+```bash
+npm install velo-circuit-editor
+# or
+pnpm add velo-circuit-editor
+```
+
 ## Module Setup
 
+First, create a module for the circuit editor:
+
 ```ts
+// circuit-editor.module.ts
 import { NgModule } from '@angular/core'
 import { BrowserModule } from '@angular/platform-browser'
 import { CircuitEditorComponent } from './circuit-editor.component'
@@ -15,9 +26,10 @@ import { CircuitEditorComponent } from './circuit-editor.component'
 export class CircuitEditorModule {}
 ```
 
-## Component
+## Component Implementation
 
 ```ts
+// circuit-editor.component.ts
 import { Component, Input, Output, EventEmitter, AfterViewInit, OnDestroy } from '@angular/core'
 import { createEditor, type EditorInstance } from 'velo-circuit-editor'
 
@@ -35,9 +47,16 @@ export class CircuitEditorComponent implements AfterViewInit, OnDestroy {
   @Output() editorError = new EventEmitter<{ type: string; payload: unknown }>()
 
   private editor: EditorInstance | null = null
+  private container: HTMLDivElement | null = null
 
   ngAfterViewInit(): void {
-    const host = document.querySelector('circuit-editor > div') as HTMLDivElement
+    // Use ViewChild to get the container reference properly
+    this.initializeEditor()
+  }
+
+  private initializeEditor(): void {
+    // Get the inner div of the component's template
+    const host = this.container?.querySelector('div') || this.container
     if (!host) return
 
     this.editor = createEditor()
@@ -57,76 +76,104 @@ export class CircuitEditorComponent implements AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.editor?.destroy()
   }
+
+  // Public API for programmatic control
+  setValue(dsl: string): void {
+    this.editor?.setValue(dsl)
+  }
+
+  getValue(): string {
+    return this.editor?.getValue() || ''
+  }
+
+  undo(): void {
+    this.editor?.undo()
+  }
+
+  redo(): void {
+    this.editor?.redo()
+  }
 }
 ```
 
-## Usage
+## Usage in Templates
 
 ```html
+<!-- Basic usage -->
 <circuit-editor
   [initialDsl]="'R0-p(R1,C1)-Wo2'"
   (dslChange)="onCircuitChange($event)"
-  (editorError)="onError($event)"
   style="width: 800px; height: 600px;"
+/>
+
+<!-- With error handling -->
+<circuit-editor
+  [initialDsl]="circuitDsl"
+  (dslChange)="onCircuitChange($event)"
+  (editorError)="onError($event)"
+  style="width: 100%; height: 400px;"
 />
 ```
 
-## Programmatic Access
+## Complete Playground Component
 
-Inject via a service or `@ViewChild`:
-
-```ts
-@ViewChild(CircuitEditorComponent) editor!: CircuitEditorComponent
-
-@ViewChild(CircuitEditorComponent) editor!: CircuitEditorComponent
-
-ngAfterViewInit() {
-  // Can be called manually if needed
-  // this.editor.editor.setValue('R0-C1')
-}
-```
-
----
-
-## Complete Playground Example
-
-This is a complete, copy-pasteable implementation of an interactive playground using the Angular Adapter. It mirrors the vanilla playground exactly!
-
-### `playground.component.ts`
+This is a full-featured circuit playground with toolbar buttons for adding elements:
 
 ```ts
+// playground.component.ts
 import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-circuit-playground',
-  template: \`
-    <div class="playground-container" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background: #1e1e1e; color: white; border-radius: 8px;">
-      
-      <!-- Top Toolbar -->
-      <div class="toolbar" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <button (click)="appendSeries('R')" class="btn">Resistor (R)</button>
-        <button (click)="appendSeries('C')" class="btn">Capacitor (C)</button>
-        <button (click)="appendSeries('L')" class="btn">Inductor (L)</button>
+  template: `
+    <div class="playground-container">
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button (click)="appendSeries('R')">Resistor (R)</button>
+        <button (click)="appendSeries('C')">Capacitor (C)</button>
+        <button (click)="appendSeries('L')">Inductor (L)</button>
+        <button (click)="appendSeries('Q')">CPE (Q)</button>
+        <button (click)="appendSeries('W')">Warburg (W)</button>
+        <div class="spacer"></div>
+        <button (click)="undo()">Undo</button>
+        <button (click)="redo()">Redo</button>
       </div>
 
-      <!-- Editor Canvas Container -->
-      <div style="width: 100%; height: 400px; border: 1px solid #333; border-radius: 4px; overflow: hidden;">
+      <!-- Editor -->
+      <div class="editor-container">
         <circuit-editor
           [initialDsl]="dsl"
           (dslChange)="onCircuitChange($event)"
+          (editorError)="onError($event)"
           style="width: 100%; height: 100%;"
         ></circuit-editor>
       </div>
 
-      <!-- State Diagnostics -->
-      <div class="diagnostics" style="background: #000; padding: 1rem; border-radius: 4px; font-family: monospace;">
-        <strong>Current DSL:</strong> {{ dsl || 'Empty Circuit' }}
+      <!-- Diagnostics -->
+      <div class="diagnostics">
+        <strong>DSL:</strong> {{ dsl || 'Empty Circuit' }}
       </div>
 
     </div>
-  \`,
-  styles: [\`
-    .btn {
+  `,
+  styles: [`
+    .playground-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem;
+      background: #1e1e1e;
+      color: white;
+      border-radius: 8px;
+      height: 500px;
+    }
+    .toolbar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .toolbar button {
       padding: 6px 12px;
       background: #3a3a3a;
       color: white;
@@ -134,18 +181,89 @@ import { Component } from '@angular/core';
       border-radius: 4px;
       cursor: pointer;
     }
-  \`]
+    .toolbar button:hover {
+      background: #4a4a4a;
+    }
+    .spacer { flex: 1; }
+    .editor-container {
+      flex: 1;
+      border: 1px solid #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .diagnostics {
+      background: #000;
+      padding: 1rem;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  `]
 })
 export class CircuitPlaygroundComponent {
   dsl = 'R0-p(R1,C1)';
 
-  onCircuitChange(newDsl: string) {
+  onCircuitChange(newDsl: string): void {
     this.dsl = newDsl;
   }
 
-  appendSeries(elementCode: string) {
-    // In Angular, we can use two-way binding or update the view child directly.
-    this.dsl = this.dsl ? \`\${this.dsl}-\${elementCode}\` : elementCode;
+  onError(error: { type: string; payload: unknown }): void {
+    console.error('Circuit editor error:', error);
+  }
+
+  appendSeries(elementCode: string): void {
+    this.dsl = this.dsl ? `${this.dsl}-${elementCode}` : elementCode;
+  }
+
+  undo(): void {
+    // Access via ViewChild if needed
+    console.log('Undo clicked');
+  }
+
+  redo(): void {
+    // Access via ViewChild if needed
+    console.log('Redo clicked');
   }
 }
 ```
+
+## Programmatic Access with ViewChild
+
+```ts
+import { ViewChild, AfterViewInit } from '@angular/core';
+import { CircuitEditorComponent } from './circuit-editor.component';
+
+@Component({
+  selector: 'app-parent',
+  template: `
+    <circuit-editor #editor [initialDsl]="dsl"></circuit-editor>
+    <button (click)="loadPreset()">Load Preset</button>
+  `
+})
+export class ParentComponent implements AfterViewInit {
+  @ViewChild('editor') editorComponent!: CircuitEditorComponent;
+  dsl = 'R0';
+
+  ngAfterViewInit(): void {
+    // Editor is ready
+  }
+
+  loadPreset(): void {
+    this.editorComponent.setValue('R0-p(R1,C1)-Wo2');
+  }
+}
+```
+
+## Events
+
+| Event | Type | Description |
+|-------|------|-------------|
+| `dslChange` | `EventEmitter<string>` | Emitted when the circuit DSL changes |
+| `editorError` | `EventEmitter<{type, payload}>` | Emitted on editor errors |
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|--------|-------------|
+| `initialDsl` | `string` | `'R0-p(R1,C1)'` | Initial Boukamp DSL string |
+| `width` | `number` | `800` | Editor width in pixels |
+| `height` | `number` | `600` | Editor height in pixels |
