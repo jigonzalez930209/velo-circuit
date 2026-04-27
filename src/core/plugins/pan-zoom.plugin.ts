@@ -6,7 +6,16 @@ const CSS = `
   background-color: var(--ce-bg);
 }
 .ce-canvas.ce-panning { cursor: grabbing; }
-.ce-canvas svg { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
+.ce-canvas svg {
+  position: absolute; top: 0; left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.ce-grid-container {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+  background-image: radial-gradient(circle, var(--ce-grid-dot, #333) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
 .ce-zoom-label {
   position: absolute; bottom: 8px; left: 8px;
   font: 500 10px var(--ce-font);
@@ -31,7 +40,27 @@ export function panZoomPlugin(): PanZoomPluginAPI {
   let zoomLabelEl: HTMLDivElement;
   let zoom = 1, panX = 0, panY = 0;
   let isPanning = false, panStartX = 0, panStartY = 0;
-  const MIN_ZOOM = 0.5, MAX_ZOOM = 2.0;
+  let contentBBox = { x: 0, y: 0, width: 0, height: 0 };
+  const MIN_ZOOM = 0.25, MAX_ZOOM = 4.0;
+  const MIN_PAN_MARGIN = 50;
+
+  function clampPan(): void {
+    // Only used by fitView — keeps content within reasonable bounds.
+    // NOT called during interactive pan/zoom to avoid jumps.
+    updateContentBBox();
+    if (contentBBox.width === 0 && contentBBox.height === 0) return;
+    const r = canvasEl.getBoundingClientRect();
+    const margin = MIN_PAN_MARGIN;
+    const leftEdge  = contentBBox.x * zoom + panX;
+    const rightEdge = (contentBBox.x + contentBBox.width)  * zoom + panX;
+    const topEdge    = contentBBox.y * zoom + panY;
+    const bottomEdge = (contentBBox.y + contentBBox.height) * zoom + panY;
+    if (leftEdge  > r.width  - margin && rightEdge < margin) {
+      // content entirely off-screen: re-center
+      panX = r.width / 2 - (contentBBox.x + contentBBox.width / 2) * zoom;
+      panY = r.height / 2 - (contentBBox.y + contentBBox.height / 2) * zoom;
+    }
+  }
 
   function applyTransform() {
     const svg = canvasEl.querySelector('svg');
@@ -40,37 +69,53 @@ export function panZoomPlugin(): PanZoomPluginAPI {
     ctx.emit('viewport-changed', { zoom, panX, panY });
   }
 
-  function fitView() {
+  function updateContentBBox(): void {
     const svg = canvasEl.querySelector('svg');
-    const nodesGroup = svg?.querySelector('#nodes') as SVGGElement | null;
-    if (!svg || !nodesGroup) return;
-    const r = canvasEl.getBoundingClientRect();
+    if (!svg) return;
     
-    let bbox = { x: 0, y: 0, width: 800, height: 600 };
-    try {
-      bbox = nodesGroup.getBBox();
-      if (bbox.width === 0 || bbox.height === 0) throw new Error('Empty BBox');
-    } catch (e) {
-      // Fallback if SVG is not rendered or empty
-      resetView();
+    const nodesGroup = svg.querySelector('#nodes') as SVGGElement | null;
+    if (nodesGroup) {
+      try {
+        const bbox = nodesGroup.getBBox();
+        if (bbox.width > 0 || bbox.height > 0) {
+          contentBBox = bbox;
+        }
+      } catch (e) {
+        contentBBox = { x: 0, y: 0, width: 800, height: 600 };
+      }
+    } else {
+      contentBBox = { x: 0, y: 0, width: 800, height: 600 };
+    }
+  }
+
+  function fitView() {
+    updateContentBBox();
+    const r = canvasEl.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+
+    if (contentBBox.width === 0 && contentBBox.height === 0) {
+      // Empty circuit — reset to default
+      zoom = 1;
+      panX = r.width / 2;
+      panY = r.height / 2;
+      applyTransform();
       return;
     }
 
-    // Add padding to bbox (20px on all sides)
-    const padding = 20;
-    const contentWidth = bbox.width + padding * 2;
-    const contentHeight = bbox.height + padding * 2;
+    const padding = 40;
+    const scaleX = (r.width  - padding * 2) / contentBBox.width;
+    const scaleY = (r.height - padding * 2) / contentBBox.height;
+    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min(scaleX, scaleY)));
 
-    zoom = Math.min(MAX_ZOOM, Math.min(r.width / contentWidth, r.height / contentHeight) * 0.95);
-    // Center the bounding box (not the origin 0,0) in the container
-    panX = (r.width - bbox.width * zoom) / 2 - bbox.x * zoom;
-    panY = (r.height - bbox.height * zoom) / 2 - bbox.y * zoom;
+    // Center the content
+    panX = (r.width  - contentBBox.width  * zoom) / 2 - contentBBox.x * zoom;
+    panY = (r.height - contentBBox.height * zoom) / 2 - contentBBox.y * zoom;
+
     applyTransform();
   }
 
   function resetView() {
-    zoom = 1; panX = 0; panY = 0;
-    applyTransform();
+    fitView();
   }
 
   // Event handlers
@@ -79,10 +124,13 @@ export function panZoomPlugin(): PanZoomPluginAPI {
     const f = e.deltaY < 0 ? 1.08 : 0.92;
     const oldZ = zoom;
     zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * f));
+    // Zoom toward the mouse cursor: keep the world point under mouse fixed
     const rect = canvasEl.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
     panX = mx - (mx - panX) * (zoom / oldZ);
     panY = my - (my - panY) * (zoom / oldZ);
+    // No clampPan here — that causes jumps
     applyTransform();
   }
 
@@ -107,8 +155,11 @@ export function panZoomPlugin(): PanZoomPluginAPI {
 
   function onPointerMove(e: PointerEvent) {
     if (!isPanning) return;
-    panX += e.clientX - panStartX; panY += e.clientY - panStartY;
-    panStartX = e.clientX; panStartY = e.clientY;
+    panX += e.clientX - panStartX;
+    panY += e.clientY - panStartY;
+    panStartX = e.clientX;
+    panStartY = e.clientY;
+    // No clampPan during drag — it causes jumps
     applyTransform();
   }
 
@@ -125,10 +176,14 @@ export function panZoomPlugin(): PanZoomPluginAPI {
     install(c) {
       ctx = c;
       ctx.injectCSS('pan-zoom', CSS);
-      // Create canvas inside .ce-workspace if it exists
       const workspace = ctx.container.querySelector('.ce-workspace') || ctx.container;
       canvasEl = document.createElement('div');
       canvasEl.className = 'ce-canvas';
+      
+      const gridContainer = document.createElement('div');
+      gridContainer.className = 'ce-grid-container';
+      canvasEl.appendChild(gridContainer);
+      
       workspace.appendChild(canvasEl);
       zoomLabelEl = document.createElement('div');
       zoomLabelEl.className = 'ce-zoom-label';
@@ -140,12 +195,20 @@ export function panZoomPlugin(): PanZoomPluginAPI {
       canvasEl.addEventListener('pointermove', onPointerMove);
       canvasEl.addEventListener('pointerup', onPointerUp);
 
-      // Re-apply transform after re-render
+      // Re-apply transform after re-render (SVG is recreated each time)
       let firstRender = true;
-      ctx.editor.on('render', () => requestAnimationFrame(() => {
-        if (firstRender) { firstRender = false; fitView(); }
-        else applyTransform();
-      }));
+      ctx.editor.on('render', () => {
+        updateContentBBox();
+        requestAnimationFrame(() => {
+          if (firstRender) {
+            firstRender = false;
+            fitView();
+          } else {
+            // Just re-apply the existing transform — don't clamp/fit
+            applyTransform();
+          }
+        });
+      });
 
       // Listen for fit/reset commands from other plugins
       ctx.on('fit-view', () => fitView());
@@ -162,6 +225,6 @@ export function panZoomPlugin(): PanZoomPluginAPI {
     getPan: () => ({ x: panX, y: panY }),
     fitView,
     resetView,
-    setZoom(z: number) { zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)); applyTransform(); },
+    setZoom(z: number) { zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)); clampPan(); applyTransform(); },
   };
 }
