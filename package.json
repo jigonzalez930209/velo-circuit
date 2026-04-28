@@ -49,6 +49,7 @@
     "test:watch": "vitest",
     "build": "tsc --project tsconfig.build.json",
     "lint": "tsc --noEmit && echo \"ok\"",
+    "release:prepare": "node ./scripts/release.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
