@@ -1,4 +1,4 @@
-export type ElementCode = 'R' | 'C' | 'L' | 'Q' | 'W' | 'Ws' | 'Wo';
+export type ElementCode = 'R' | 'C' | 'L' | 'Q' | 'W' | 'Ws' | 'Wo' | 'G' | 'Pdw';
 
 export enum ElementKind {
   Resistor = 'R',
@@ -8,6 +8,8 @@ export enum ElementKind {
   WarburgInfinite = 'W',
   WarburgShort = 'Ws',
   WarburgOpen = 'Wo',
+  Gerischer = 'G',
+  ParallelDiffusionWarburg = 'Pdw',
 }
 
 export interface ElementKindDef {
@@ -25,6 +27,8 @@ export const ELEMENT_KINDS: ReadonlyMap<ElementKind, ElementKindDef> = new Map([
   [ElementKind.WarburgInfinite, { code: 'W', label: 'Warburg (infinite)', nParams: 1, params: ['σ (Ω·s⁻½)'] }],
   [ElementKind.WarburgShort, { code: 'Ws', label: 'Warburg (short)', nParams: 2, params: ['Y₀ (S·s½)', 'B (s½)'] }],
   [ElementKind.WarburgOpen, { code: 'Wo', label: 'Warburg (open)', nParams: 2, params: ['Y₀ (S·s½)', 'B (s½)'] }],
+  [ElementKind.Gerischer, { code: 'G', label: 'Gerischer', nParams: 2, params: ['Y₀ (S·s½)', 'K (s⁻¹)'] }],
+  [ElementKind.ParallelDiffusionWarburg, { code: 'Pdw', label: 'Parallel Diffusion Warburg', nParams: 4, params: ['D1 (cm²/s)', 'D2 (cm²/s)', 'theta', 'Lambda (mol/cm³)'] }],
 ]);
 
 export interface ElementSlot {
@@ -56,6 +60,8 @@ export function elementKindFromCode(code: string): ElementKind | null {
   if (code === 'W') return ElementKind.WarburgInfinite;
   if (code === 'Ws') return ElementKind.WarburgShort;
   if (code === 'Wo') return ElementKind.WarburgOpen;
+  if (code === 'G') return ElementKind.Gerischer;
+  if (code === 'Pdw') return ElementKind.ParallelDiffusionWarburg;
   return null;
 }
 
@@ -97,7 +103,10 @@ export function nParams(kind: ElementKind): number {
     case ElementKind.Cpe:
     case ElementKind.WarburgShort:
     case ElementKind.WarburgOpen:
+    case ElementKind.Gerischer:
       return 2;
+    case ElementKind.ParallelDiffusionWarburg:
+      return 4;
   }
 }
 

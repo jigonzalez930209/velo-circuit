@@ -7,6 +7,8 @@ export type ValidationErrorKind =
   | 'empty-series'
   | 'single-branch-parallel'
   | 'dangling-element'
+  | 'parameter-count'
+  | 'invalid-parameters'
   | 'syntax-error';
 
 export type ValidationWarningKind =
