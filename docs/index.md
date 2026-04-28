@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Velo Circuit Editor
   text: Framework-agnostic SVG circuit editor for electrochemical impedance spectroscopy
-  tagline: No external dependencies · Pure SVG · TypeScript · 45 tests passing
+  tagline: No external dependencies · Pure SVG · TypeScript · 145 tests passing
   actions:
     - theme: brand
       text: Get Started
