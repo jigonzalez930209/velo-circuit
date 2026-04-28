@@ -1,6 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { parseBoukamp, serialize, validate, tokenize } from '../src/core/parser-bridge/index.js';
 import { ElementKind } from '../src/core/domain/circuit.js';
+import type { CircuitNode } from '../src/core/domain/circuit.js';
+
+function isParseFailure(result: ReturnType<typeof parseBoukamp>): boolean {
+  return result.type === 'lex' || result.type === 'parse';
+}
+
+function expectCircuit(dsl: string): CircuitNode {
+  const result = parseBoukamp(dsl);
+  expect(isParseFailure(result)).toBe(false);
+  if (isParseFailure(result)) {
+    throw new Error(`expected valid circuit: ${dsl}`);
+  }
+  return result as CircuitNode;
+}
 
 describe('lexer', () => {
   it('tokenizes a simple resistor', () => {
@@ -19,6 +33,13 @@ describe('lexer', () => {
     if (Array.isArray(ws)) expect(ws[0].value).toBe('Ws');
     const wo = tokenize('Wo1');
     if (Array.isArray(wo)) expect(wo[0].value).toBe('Wo');
+  });
+
+  it('tokenizes Gerischer and PDW codes', () => {
+    const gerischer = tokenize('G0');
+    if (Array.isArray(gerischer)) expect(gerischer[0].value).toBe('G');
+    const pdw = tokenize('Pdw3');
+    if (Array.isArray(pdw)) expect(pdw[0].value).toBe('Pdw');
   });
 
   it('tokenizes series dash', () => {
@@ -73,6 +94,12 @@ describe('parser', () => {
     expect(result).toHaveProperty('type', 'parallel');
   });
 
+  it('parses Gerischer and PDW reference circuits', () => {
+    expect(parseBoukamp('G0')).toHaveProperty('type', 'element');
+    expect(parseBoukamp('Pdw0')).toHaveProperty('type', 'element');
+    expect(parseBoukamp('R0-p(Q1,R2-Pdw3)')).toHaveProperty('type', 'series');
+  });
+
   it('returns parse error for invalid syntax', () => {
     const result = parseBoukamp('R0-');
     expect(result).toHaveProperty('type', 'parse');
@@ -108,12 +135,14 @@ describe('serializer', () => {
 
   it('round-trips R0-p(R1,C1)-Wo2', () => {
     const dsl = 'R0-p(R1,C1)-Wo2';
-    const result = parseBoukamp(dsl);
-    expect(result).not.toHaveProperty('type', 'lex');
-    expect(result).not.toHaveProperty('type', 'parse');
-    if (!('type' in result)) {
-      const output = serialize(result);
-      expect(output).toBe(dsl);
+    const result = expectCircuit(dsl);
+    const output = serialize(result);
+    expect(output).toBe(dsl);
+  });
+
+  it('round-trips the unified spectroz DSL examples', () => {
+    for (const dsl of ['G0', 'Pdw0', 'R0-p(Q1,R2-Pdw3)', 'R0-p(Ws1,Wo2)-G3']) {
+      expect(serialize(expectCircuit(dsl))).toBe(dsl);
     }
   });
 });
@@ -131,12 +160,19 @@ describe('validator', () => {
 
   it('passes a valid Randles circuit', () => {
     const dsl = 'R0-p(R1,C1)-Wo2';
-    const result = parseBoukamp(dsl);
-    expect(result).not.toHaveProperty('type', 'lex');
-    expect(result).not.toHaveProperty('type', 'parse');
-    if (!('type' in result)) {
-      const diagnostics = validate(result);
-      expect(diagnostics.hasErrors).toBe(false);
-    }
+    const result = expectCircuit(dsl);
+    const diagnostics = validate(result);
+    expect(diagnostics.hasErrors).toBe(false);
+  });
+
+  it('validates embedded PDW parameter arity and domain', () => {
+    const wrongArity = expectCircuit('Pdw0[1e-10,1e-11,0.5]');
+    expect(validate(wrongArity).hasErrors).toBe(true);
+
+    const invalidTheta = expectCircuit('Pdw0[1e-10,1e-11,1.2,4.2e-4]');
+    expect(validate(invalidTheta).hasErrors).toBe(true);
+
+    const valid = expectCircuit('Pdw0[1e-10,1e-11,0.6,4.2e-4]');
+    expect(validate(valid).hasErrors).toBe(false);
   });
 });
