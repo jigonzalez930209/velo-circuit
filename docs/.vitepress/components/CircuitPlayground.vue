@@ -45,7 +45,7 @@ const currentPreview = computed(() => previewComponents[activeTab.value] || Vani
 
 const frameworkCode = {
   react: `import React, { useState } from 'react';
-import { useCircuitEditor } from 'velo-circuit-editor/adapters/react';
+import { useCircuitEditor } from 'velo-circuit/react';
 
 export default function CircuitPlayground() {
   const [dsl, setDsl] = useState('${dslInput.value}');
@@ -57,12 +57,12 @@ export default function CircuitPlayground() {
 </template>
 <script setup>
 import { ref } from 'vue';
-import { useCircuitEditor } from 'velo-circuit-editor/adapters/vue';
+import { useCircuitEditor } from 'velo-circuit/vue';
 const dsl = ref('${dslInput.value}');
 const { containerRef } = useCircuitEditor({ value: dsl });
 <\/script>`,
   svelte: `<script lang="ts">
-  import { circuitEditor } from 'velo-circuit-editor/adapters/svelte';
+  import { circuitEditor } from 'velo-circuit/svelte';
   let dsl = '${dslInput.value}';
 <\/script>
 <div use:circuitEditor={{ value: dsl }} style="height: 500px"></div>`,
@@ -82,7 +82,7 @@ export class CircuitEditorComponent implements AfterViewInit {
 }`,
   astro: `<div id="editor" style="height: 500px"></div>
 <script>
-  import { mountAstroCircuitEditor } from 'velo-circuit-editor/adapters/astro';
+  import { mountAstroCircuitEditor } from 'velo-circuit/astro';
 
   const editor = mountAstroCircuitEditor(
     document.getElementById('editor'),
@@ -140,6 +140,9 @@ function centerView() {
 }
 
 watch(isDark, (val) => {
+  if (typeof document === 'undefined') {
+    return;
+  }
   const editors = document.querySelectorAll('.ce-editor');
   editors.forEach(el => {
     if (val) el.classList.add('ce-dark');
