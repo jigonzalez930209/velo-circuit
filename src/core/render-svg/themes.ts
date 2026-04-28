@@ -80,5 +80,7 @@ export function buildThemeCSS(theme: RenderTheme): string {
     .circuit-node[data-kind="L"] { --ce-L-stroke: #34d399; }
     .circuit-node[data-kind="Q"] { --ce-Q-stroke: #fbbf24; }
     .circuit-node[data-kind="W"], .circuit-node[data-kind="Ws"], .circuit-node[data-kind="Wo"] { --ce-W-stroke: #a78bfa; --ce-Ws-stroke: #a78bfa; --ce-Wo-stroke: #a78bfa; }
+    .circuit-node[data-kind="G"] { --ce-G-stroke: #22d3ee; }
+    .circuit-node[data-kind="Pdw"] { --ce-Pdw-stroke: #c084fc; }
   `.trim();
 }

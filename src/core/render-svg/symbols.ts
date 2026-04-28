@@ -124,6 +124,33 @@ export function buildSvgElementSymbol(kind: ElementKind, theme: RenderTheme): st
       </g>`;
     }
 
+    // ─── Gerischer (G): diffusion-reaction element ───
+    case 'G' as ElementKind: {
+      return `<g>
+        <line x1="0" y1="20" x2="14" y2="20" stroke="${kindStroke}" stroke-width="${sw}" />
+        <rect x="14" y="8" width="52" height="24" stroke="${kindStroke}" stroke-width="${sw}" fill="${colors.fill}" rx="4" />
+        <path d="M22,26 C30,12 38,28 46,14 C50,10 54,10 58,14"
+          stroke="${kindStroke}" stroke-width="${sw * 0.9}" fill="none" />
+        <text x="40" y="24" text-anchor="middle" font-size="${fontSize * 0.8}" font-family="${fontFamily}" fill="${kindStroke}">G</text>
+        <line x1="66" y1="20" x2="80" y2="20" stroke="${kindStroke}" stroke-width="${sw}" />
+      </g>`;
+    }
+
+    // ─── Parallel Diffusion Warburg (Pdw): paired diffusion paths ───
+    case 'Pdw' as ElementKind: {
+      return `<g>
+        <line x1="0" y1="20" x2="14" y2="20" stroke="${kindStroke}" stroke-width="${sw}" />
+        <line x1="14" y1="10" x2="24" y2="10" stroke="${kindStroke}" stroke-width="${sw}" />
+        <line x1="14" y1="30" x2="24" y2="30" stroke="${kindStroke}" stroke-width="${sw}" />
+        <line x1="24" y1="18" x2="48" y2="6" stroke="${kindStroke}" stroke-width="${sw * 1.1}" />
+        <line x1="24" y1="34" x2="48" y2="22" stroke="${kindStroke}" stroke-width="${sw * 1.1}" />
+        <line x1="48" y1="10" x2="66" y2="10" stroke="${kindStroke}" stroke-width="${sw}" />
+        <line x1="48" y1="30" x2="66" y2="30" stroke="${kindStroke}" stroke-width="${sw}" />
+        <line x1="66" y1="20" x2="80" y2="20" stroke="${kindStroke}" stroke-width="${sw}" />
+        <text x="40" y="22" text-anchor="middle" font-size="${fontSize * 0.65}" font-family="${fontFamily}" fill="${kindStroke}">PDW</text>
+      </g>`;
+    }
+
     // ─── Fallback: generic box ───
     default: {
       return `<g>
