@@ -1,127 +1,181 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none">
   <defs>
-    <!-- Circuit Brand Gradients - Cyan/Teal theme -->
-    <linearGradient id="circuitGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4cc9f0; stop-opacity:0.5"/>
-      <stop offset="100%" style="stop-color:#4361ee; stop-opacity:0.3"/>
+    <!-- Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4cc9f0; stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#4361ee; stop-opacity:0.4"/>
     </linearGradient>
-
-    <linearGradient id="flowGradC" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" style="stop-color:#4cc9f0; stop-opacity:0"/>
-      <stop offset="50%" style="stop-color:#4cc9f0; stop-opacity:0.7"/>
+      <stop offset="50%" style="stop-color:#4cc9f0; stop-opacity:0.9"/>
       <stop offset="100%" style="stop-color:#4361ee; stop-opacity:0"/>
     </linearGradient>
+    <linearGradient id="waveGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" style="stop-color:#4cc9f0; stop-opacity:0.8"/>
+      <stop offset="50%" style="stop-color:#4361ee; stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#3a0ca3; stop-opacity:0.4"/>
+    </linearGradient>
 
-    <!-- Glow filters -->
-    <filter id="glowC" x="-20%" y="-20%" width="140%" height="140%">
+    <!-- Filters -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="6" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softBlur">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
 
-    <filter id="softBlurC">
-      <feGaussianBlur stdDeviation="2"/>
-    </filter>
-
-    <!-- Circuit Grid Pattern -->
-    <pattern id="circuitGrid" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="scale(1)">
-      <path d="M30 0 L60 17.3 L60 51.9 L30 69.2 L0 51.9 L0 17.3 Z" fill="none" stroke="#4cc9f0" stroke-width="0.5" opacity="0.12"/>
-      <path d="M0 0 L30 17.3 L30 51.9 L0 69.2 L-30 51.9 L-30 17.3 Z" fill="none" stroke="#4cc9f0" stroke-width="0.5" opacity="0.08"/>
+    <!-- Patterns -->
+    <pattern id="circuitGrid" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#4cc9f0" stroke-width="0.5" opacity="0.15"/>
+      <circle cx="100" cy="100" r="2" fill="#4cc9f0" opacity="0.3"/>
+      <circle cx="0" cy="0" r="2" fill="#4cc9f0" opacity="0.3"/>
+    </pattern>
+    <pattern id="dotGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1.5" fill="#4cc9f0" opacity="0.1"/>
     </pattern>
 
+    <!-- CSS Animations -->
     <style>
-      @keyframes flowCircuit {
-        0% { stroke-dashoffset: 1000; opacity: 0; }
+      @keyframes flow {
+        0% { stroke-dashoffset: 2000; opacity: 0; }
         10% { opacity: 1; }
-        90% { opacity: 0.8; }
+        90% { opacity: 1; }
         100% { stroke-dashoffset: 0; opacity: 0; }
       }
-
-      @keyframes floatCircuit {
-        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.08; }
-        50% { transform: translateY(-20px) rotate(3deg); opacity: 0.2; }
+      @keyframes floatUp {
+        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+        50% { transform: translateY(-40px) rotate(5deg); opacity: 0.4; }
       }
-
-      @keyframes pulseNode {
-        0%, 100% { transform: scale(1); opacity: 0.15; }
-        50% { transform: scale(1.2); opacity: 0.3; }
+      @keyframes floatDown {
+        0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+        50% { transform: translateY(40px) rotate(-5deg); opacity: 0.4; }
       }
-
-      @keyframes rotate {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.4; }
+        50% { transform: scale(1.5); opacity: 0.8; }
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 0.2; }
+        50% { opacity: 1; }
       }
 
       .flow-line {
-        stroke-dasharray: 200 800;
-        animation: flowCircuit 8s linear infinite;
+        stroke-dasharray: 300 1700;
+        animation: flow 15s linear infinite;
       }
-
-      .float-1 { animation: floatCircuit 9s ease-in-out infinite; }
-      .float-2 { animation: floatCircuit 11s ease-in-out infinite; }
-      .float-3 { animation: floatCircuit 14s ease-in-out infinite; }
-
+      .float-1 { animation: floatUp 12s ease-in-out infinite; }
+      .float-2 { animation: floatDown 15s ease-in-out infinite; }
+      .float-3 { animation: floatUp 18s ease-in-out infinite; }
       .pulse-node {
         transform-origin: center;
         transform-box: fill-box;
-        animation: pulseNode 6s ease-in-out infinite;
+        animation: pulse 4s ease-in-out infinite;
       }
-
-      .rotate-slow {
-        transform-origin: center;
-        transform-box: fill-box;
-        animation: rotate 60s linear infinite;
+      .blink-node {
+        animation: blink 3s step-end infinite;
       }
     </style>
   </defs>
 
-  <!-- Background Circuit Grid -->
+  <!-- Background Grids -->
+  <rect width="100%" height="100%" fill="url(#dotGrid)" />
   <rect width="100%" height="100%" fill="url(#circuitGrid)" />
 
-  <!-- Ambient Glow Orbs -->
-  <circle cx="150" cy="150" r="250" fill="url(#circuitGrad)" opacity="0.04" filter="url(#glowC)" />
-  <circle cx="1300" cy="750" r="350" fill="url(#circuitGrad)" opacity="0.04" filter="url(#glowC)" />
-  <circle cx="700" cy="450" r="200" fill="url(#circuitGrad)" opacity="0.03" filter="url(#glowC)" />
+  <!-- Ambient Glowing Orbs -->
+  <circle cx="200" cy="200" r="350" fill="url(#bgGrad)" opacity="0.08" filter="url(#strongGlow)" />
+  <circle cx="1200" cy="700" r="450" fill="url(#bgGrad)" opacity="0.06" filter="url(#strongGlow)" />
 
-  <!-- Dynamic Circuit Flow Lines -->
-  <g stroke="url(#flowGradC)" stroke-width="2" fill="none" filter="url(#glowC)">
-    <path d="M-50,180 Q300,80 720,400 T1550,250" class="flow-line" style="animation-delay: 0s;"/>
-    <path d="M-50,500 Q400,700 900,350 T1550,600" class="flow-line" style="animation-delay: -3s; stroke-width: 2.5;"/>
-    <path d="M200,-50 Q500,300 200,950" class="flow-line" style="animation-delay: -6s; opacity: 0.6;"/>
+  <!-- PCB Traces (Static) -->
+  <g stroke="#4cc9f0" stroke-width="1.5" opacity="0.2" fill="none">
+    <path d="M 0 150 H 300 L 400 250 H 600" />
+    <path d="M 1440 650 H 1100 L 950 500 H 800" />
+    <path d="M 200 900 V 750 L 300 650 H 450" />
+    <path d="M 1200 0 V 150 L 1050 300 H 900" />
+    <circle cx="600" cy="250" r="4"/>
+    <circle cx="800" cy="500" r="4"/>
+    <circle cx="450" cy="650" r="4"/>
+    <circle cx="900" cy="300" r="4"/>
   </g>
 
-  <!-- Circuit Symbols -->
-  <g fill="#4cc9f0" font-size="100" font-family="monospace" filter="url(#softBlurC)">
-    <text x="80" y="250" class="float-1">Ω</text>
-    <text x="1250" y="180" class="float-2">ζ</text>
-    <text x="1150" y="820" class="float-3">θ</text>
-    <text x="30" y="850" class="float-2">R</text>
-    <text x="650" y="80" class="float-1">C</text>
-    <text x="1350" y="550" class="float-3">Z</text>
+  <!-- Flowing Waves (from velo-plot inspiration) -->
+  <path d="M -100 600 Q 200 500, 400 550 T 900 450 T 1500 300" stroke="url(#waveGrad)" stroke-width="4" fill="none" filter="url(#glow)" opacity="0.7"/>
+  <path d="M -100 650 Q 250 550, 450 600 T 950 500 T 1500 350" stroke="url(#waveGrad)" stroke-width="2" fill="none" opacity="0.3"/>
+  <path d="M -100 700 Q 300 600, 500 650 T 1000 550 T 1500 400" stroke="url(#waveGrad)" stroke-width="1" fill="none" opacity="0.15"/>
+
+  <!-- Dynamic Data / Energy Streams -->
+  <g stroke="url(#flowGrad)" stroke-width="3" fill="none" filter="url(#glow)">
+    <path d="M -100 200 L 250 200 L 400 350 L 700 350 L 850 200 L 1540 200" class="flow-line" style="animation-delay: 0s;"/>
+    <path d="M -100 800 L 400 800 L 600 600 L 1000 600 L 1200 800 L 1540 800" class="flow-line" style="animation-delay: -5s; stroke-width: 4;"/>
+    <path d="M 300 -100 V 250 L 450 400 V 900" class="flow-line" style="animation-delay: -9s; opacity: 0.6;"/>
+    <path d="M 1100 1000 V 650 L 950 500 V -100" class="flow-line" style="animation-delay: -2s; opacity: 0.8;"/>
   </g>
 
-  <!-- Connection Nodes (Circuit Dots) -->
-  <g fill="#4cc9f0" filter="url(#glowC)">
-    <circle cx="350" cy="120" r="6" class="pulse-node" style="animation-delay: 0s;"/>
-    <circle cx="720" cy="400" r="10" class="pulse-node" style="animation-duration: 5s;"/>
-    <circle cx="1050" cy="680" r="8" class="pulse-node" style="animation-delay: -2s;"/>
-    <circle cx="550" cy="750" r="7" class="pulse-node" style="animation-delay: -4s;"/>
+  <!-- Glowing Nodes on Waves and Traces -->
+  <g fill="#4cc9f0" filter="url(#glow)">
+    <circle cx="400" cy="550" r="6" class="pulse-node" style="animation-delay: 0s;"/>
+    <circle cx="900" cy="450" r="8" class="pulse-node" style="animation-delay: -2s;"/>
+    <circle cx="400" cy="350" r="5" class="blink-node" style="animation-delay: 0s;"/>
+    <circle cx="600" cy="600" r="7" class="pulse-node" style="animation-delay: -1s;"/>
+    <circle cx="1200" cy="800" r="5" class="blink-node" style="animation-delay: -1.5s;"/>
   </g>
 
-  <!-- Circuit Element Symbols -->
-  <g stroke="#4cc9f0" stroke-width="3" fill="none" opacity="0.15" filter="url(#glowC)">
-    <!-- Resistor symbol -->
-    <path d="M300 600 L320 600 L330 590 L350 610 L370 590 L390 610 L400 600 L420 600" />
-    <!-- Capacitor symbol -->
-    <path d="M800 100 L800 140 M790 120 L810 120 M790 120 L790 140 M810 120 L810 140 M800 140 L800 180" />
-    <!-- Inductor symbol -->
-    <path d="M1100 700 Q1130 680 1160 700 Q1190 720 1220 700 Q1250 680 1280 700 L1280 700" />
+  <!-- Circuit Symbols (from notebook-bg inspiration) -->
+  <g fill="#4cc9f0" font-family="'Space Mono', monospace" font-weight="bold" font-size="90" filter="url(#softBlur)">
+    <!-- Op-Amp Symbol -->
+    <path d="M 150 250 L 250 300 L 150 350 Z" stroke="#4cc9f0" stroke-width="4" fill="none" class="float-1"/>
+    <!-- Resistor -->
+    <path d="M 1150 200 L 1170 170 L 1210 230 L 1250 170 L 1290 230 L 1310 200" stroke="#4361ee" stroke-width="8" stroke-linejoin="round" fill="none" class="float-2"/>
+    <!-- Capacitor -->
+    <path d="M 650 750 H 750 M 650 780 H 750" stroke="#4cc9f0" stroke-width="12" fill="none" class="float-3"/>
+    
+    <text x="80" y="700" class="float-2">Ω</text>
+    <text x="1300" y="600" class="float-1" fill="#4361ee">Z</text>
+    <text x="800" y="150" class="float-3">v(t)</text>
+    <text x="500" y="850" class="float-1">i(t)</text>
   </g>
 
-  <!-- Rotating Ring Elements -->
-  <g opacity="0.08" stroke="#4cc9f0" stroke-width="1.5" fill="none">
-    <circle cx="400" cy="300" r="60" class="rotate-slow" style="animation-duration: 40s;"/>
-    <circle cx="1000" cy="200" r="40" class="rotate-slow" style="animation-duration: 30s; animation-direction: reverse;"/>
-    <circle cx="800" cy="700" r="50" class="rotate-slow" style="animation-duration: 50s;"/>
+  <!-- Floating Particles / Data points -->
+  <g opacity="0.5" filter="url(#softBlur)">
+    <circle cx="250" cy="360" r="3" fill="#4cc9f0"/>
+    <circle cx="320" cy="340" r="2" fill="#4361ee"/>
+    <circle cx="450" cy="310" r="4" fill="#4cc9f0"/>
+    <circle cx="720" cy="240" r="2" fill="#4361ee"/>
+    <circle cx="850" cy="190" r="4" fill="#4cc9f0"/>
+    <circle cx="1050" cy="140" r="3" fill="#4361ee"/>
   </g>
 
+  <g opacity="0.4">
+    <circle cx="150" cy="500" r="2" fill="#4cc9f0">
+      <animate attributeName="cy" values="500;480;500" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="350" cy="650" r="3" fill="#4361ee">
+      <animate attributeName="cy" values="650;670;650" dur="5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="750" cy="100" r="4" fill="#4cc9f0">
+      <animate attributeName="cy" values="100;120;100" dur="6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="1150" cy="800" r="2" fill="#4361ee">
+      <animate attributeName="cy" values="800;780;800" dur="4s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Technical Accents -->
+  <g stroke="#4cc9f0" stroke-width="2" fill="none" opacity="0.3">
+    <!-- Grid targets -->
+    <path d="M 50 40 L 50 50 L 60 50" />
+    <path d="M 1390 40 L 1390 50 L 1380 50" />
+    <path d="M 50 860 L 50 850 L 60 850" />
+    <path d="M 1390 860 L 1390 850 L 1380 850" />
+  </g>
 </svg>

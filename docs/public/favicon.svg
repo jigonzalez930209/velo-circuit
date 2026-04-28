@@ -1,12 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="vc-grad" x1="12" y1="12" x2="116" y2="116" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#4cc9f0"/>
-      <stop offset="1" stop-color="#4361ee"/>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4cc9f0"/>
+      <stop offset="100%" style="stop-color:#4361ee"/>
     </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect x="8" y="8" width="112" height="112" rx="28" fill="#0b1120"/>
-  <rect x="18" y="18" width="92" height="92" rx="22" stroke="url(#vc-grad)" stroke-width="4"/>
-  <path d="M24 64h16l8-16 16 32 16-32 8 16h16" stroke="url(#vc-grad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="64" cy="64" r="8" fill="url(#vc-grad)"/>
+  <!-- Hexagonal frame (family style) -->
+  <path d="M32 4L56 18V46L32 60L8 46V18L32 4Z" stroke="url(#logoGrad)" stroke-width="2.5" fill="none" filter="url(#glow)"/>
+  
+  <!-- Op-Amp Circuit Symbol inside -->
+  <path d="M 22 20 L 46 32 L 22 44 Z" stroke="url(#logoGrad)" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+  
+  <!-- Inputs -->
+  <line x1="12" y1="26" x2="22" y2="26" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round"/>
+  <line x1="12" y1="38" x2="22" y2="38" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Output -->
+  <line x1="46" y1="32" x2="52" y2="32" stroke="url(#logoGrad)" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Nodes with glow -->
+  <circle cx="12" cy="26" r="1.5" fill="#4cc9f0" filter="url(#glow)"/>
+  <circle cx="12" cy="38" r="1.5" fill="#4cc9f0" filter="url(#glow)"/>
+  <circle cx="52" cy="32" r="2" fill="#4361ee" filter="url(#glow)"/>
+  
+  <!-- Op-Amp + / - signs -->
+  <path d="M 26 26 h 3 M 27.5 24.5 v 3" stroke="url(#logoGrad)" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M 26 38 h 3" stroke="url(#logoGrad)" stroke-width="1.2" stroke-linecap="round"/>
 </svg>
