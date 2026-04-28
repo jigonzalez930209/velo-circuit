@@ -1,6 +1,6 @@
 import type { EditorPlugin, PluginContext } from './types.js';
 
-const KINDS = ['R', 'C', 'L', 'Q', 'W', 'Ws', 'Wo'] as const;
+const KINDS = ['R', 'C', 'L', 'Q', 'W', 'Ws', 'Wo', 'G', 'Pdw'] as const;
 
 const CSS = `
 .ce-toolbar {
@@ -32,6 +32,10 @@ const CSS = `
   { border-color: #a78bfa; color: #7c3aed; }
 .ce-tb-el[data-kind="W"]:hover, .ce-tb-el[data-kind="Ws"]:hover, .ce-tb-el[data-kind="Wo"]:hover
   { background: var(--ce-W-bg); }
+.ce-tb-el[data-kind="G"]  { border-color: #22d3ee; color: #0891b2; }
+.ce-tb-el[data-kind="G"]:hover  { background: var(--ce-G-bg, #cffafe); }
+.ce-tb-el[data-kind="Pdw"]  { border-color: #c084fc; color: #9333ea; }
+.ce-tb-el[data-kind="Pdw"]:hover  { background: var(--ce-Pdw-bg, #f3e8ff); }
 .ce-tb-mode {
   padding: 4px 11px; border: 1px solid var(--ce-border); border-radius: 5px;
   background: var(--ce-surface); cursor: pointer;

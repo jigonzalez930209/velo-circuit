@@ -34,9 +34,13 @@ const CSS = `
   { border-color: #a78bfa; color: #7c3aed; }
 .ce-ep-btn[data-k="W"]:hover, .ce-ep-btn[data-k="Ws"]:hover, .ce-ep-btn[data-k="Wo"]:hover
   { background: var(--ce-W-bg); }
+.ce-ep-btn[data-k="G"]  { border-color: #22d3ee; color: #0891b2; }
+.ce-ep-btn[data-k="G"]:hover  { background: var(--ce-G-bg, #cffafe); }
+.ce-ep-btn[data-k="Pdw"]  { border-color: #c084fc; color: #9333ea; }
+.ce-ep-btn[data-k="Pdw"]:hover  { background: var(--ce-Pdw-bg, #f3e8ff); }
 `;
 
-const KINDS = ['R', 'C', 'L', 'Q', 'W', 'Ws', 'Wo'];
+const KINDS = ['R', 'C', 'L', 'Q', 'W', 'Ws', 'Wo', 'G', 'Pdw'];
 
 export interface PickerRequest {
   targetId: string;
