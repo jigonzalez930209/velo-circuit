@@ -39,6 +39,8 @@ const ELEMENT_COLORS: Record<string, { bg: string; border: string; text: string 
   W: { bg: '#ede9fe', border: '#a78bfa', text: '#4c1d95' },
   Ws: { bg: '#ede9fe', border: '#8b5cf6', text: '#4c1d95' },
   Wo: { bg: '#ede9fe', border: '#7c3aed', text: '#4c1d95' },
+  G: { bg: '#cffafe', border: '#22d3ee', text: '#164e63' },
+  Pdw: { bg: '#f3e8ff', border: '#c084fc', text: '#581c87' },
 };
 
 const DARK_ELEMENT_COLORS: Record<string, { bg: string; border: string; text: string }> = {
@@ -49,6 +51,8 @@ const DARK_ELEMENT_COLORS: Record<string, { bg: string; border: string; text: st
   W: { bg: '#2e1065', border: '#a78bfa', text: '#e0e7ff' },
   Ws: { bg: '#2e1065', border: '#8b5cf6', text: '#e0e7ff' },
   Wo: { bg: '#2e1065', border: '#7c3aed', text: '#e0e7ff' },
+  G: { bg: '#164e63', border: '#22d3ee', text: '#cffafe' },
+  Pdw: { bg: '#3b0764', border: '#c084fc', text: '#f3e8ff' },
 };
 
 /**
