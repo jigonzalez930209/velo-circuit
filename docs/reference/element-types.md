@@ -91,6 +91,32 @@ Wo1       → [Wo1]
 - **Units:** Y₀ (S·s½), B (s½)
 - **DSL code:** `Wo`
 
+## Gerischer (`G`)
+
+Diffusion-reaction impedance with a finite reaction rate.
+
+```
+G0        → [ G0 ]
+            reaction + diffusion
+```
+
+- **Parameters:** 2
+- **Units:** Y₀ (S·s½), K (s⁻¹)
+- **DSL code:** `G`
+
+## Parallel Diffusion Warburg (`Pdw`)
+
+Two parallel solid-state diffusion paths with a weighting factor. This matches the PDW element used by `velo-spectroz` literature reproduction.
+
+```
+Pdw0      → [Pdw0]
+            diffusion path 1 ∥ diffusion path 2
+```
+
+- **Parameters:** 4
+- **Units:** D1 (cm²/s), D2 (cm²/s), theta (dimensionless), Lambda (mol/cm³)
+- **DSL code:** `Pdw`
+
 ## ELEMENT_KINDS Table
 
 | Code | Label | Parameters |
@@ -102,3 +128,5 @@ Wo1       → [Wo1]
 | `W` | Warburg Infinite | 1 |
 | `Ws` | Warburg Short | 2 |
 | `Wo` | Warburg Open | 2 |
+| `G` | Gerischer | 2 |
+| `Pdw` | Parallel Diffusion Warburg | 4 |
