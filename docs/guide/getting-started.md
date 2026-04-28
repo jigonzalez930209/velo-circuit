@@ -3,7 +3,7 @@
 ## Installation
 
 ```bash
-npm install
+npm install velo-circuit
 ```
 
 Or import directly from the source:
@@ -15,7 +15,7 @@ import { createEditor } from './src/core/index.ts'
 ## Minimal Example
 
 ```ts
-import { createEditor } from 'velo-circuit-editor'
+import { createEditor } from 'velo-circuit'
 
 const editor = createEditor()
 

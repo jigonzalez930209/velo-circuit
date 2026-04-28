@@ -36,6 +36,7 @@ export default defineConfig({
           { text: 'Architecture', link: '/guide/architecture' },
           { text: 'Core Concepts', link: '/guide/core-concepts' },
           { text: 'Boukamp DSL', link: '/guide/boukamp-dsl' },
+          { text: 'Release and Publish', link: '/guide/release-and-publish' },
         ]},
       ],
       '/examples/': [
