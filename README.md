@@ -1,86 +1,75 @@
-# Velo Circuit Editor
+# velo-circuit
 
-Framework-agnostic SVG circuit editor based on the Boukamp DSL notation for electrochemical impedance spectroscopy (EIS).
+Framework-agnostic SVG circuit editor for Boukamp DSL circuits used in electrochemical impedance spectroscopy (EIS).
 
-## Features
+## Why velo-circuit
 
-- Parse and serialize the Boukamp DSL notation (`R0-p(R1,C1)-Wo2`)
-- Visual circuit editor with SVG rendering
-- Framework-agnostic core — no external UI dependencies
-- Official adapters: React, Vue, Angular, Astro, Svelte, Vanilla
-- Dark and light theme support
-- Undo/redo, drag, zoom, pan
-- Real-time validation and diagnostics
+- Unified circuit model from DSL parsing to rendered SVG output
+- Pure TypeScript core with no runtime UI framework dependency
+- Official adapters for React, Vue, Svelte, Angular, Astro and Vanilla
+- Built-in editor interactions: zoom, pan, drag, diagnostics, undo/redo
+- Designed to integrate with scientific tooling such as `velo-spectroz`
 
-## Quick Start
+## Install
 
 ```bash
-# Install
-npm install
-
-# Type check
-npm run typecheck
-
-# Run tests
-npm test
-
-# Build
-npm run build
+pnpm add velo-circuit
 ```
 
-## Usage (Vanilla)
+or:
+
+```bash
+npm install velo-circuit
+```
+
+## Quick Usage (Vanilla)
 
 ```ts
-import { createEditor } from 'velo-circuit-editor';
+import { createEditor } from 'velo-circuit';
 
 const editor = createEditor();
+
 editor.mount(document.getElementById('canvas'), {
   initialDsl: 'R0-p(R1,C1)-Wo2',
-  width: 800,
-  height: 600,
+  width: 900,
+  height: 560,
 });
 
-// React to changes
 editor.on('ast-changed', () => {
-  console.log(editor.getValue()); // "R0-p(R1,C1)-Wo2"
+  console.log(editor.getValue());
 });
-
-// Update from DSL
-editor.setValue('R0-C1-L2');
-
-// Get full document state
-const doc = editor.getDocument();
-
-// Undo / redo
-editor.undo();
-editor.redo();
 ```
 
-## Supported Element Types
+## Local Development
 
-| Code | Element |
-|------|---------|
-| `R` | Resistor |
-| `C` | Capacitor |
-| `L` | Inductor |
-| `Q` | CPE (Constant Phase Element) |
-| `W` | Warburg Infinite |
-| `Ws` | Warburg Short |
-| `Wo` | Warburg Open |
-
-## Architecture
-
+```bash
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm docs:dev
 ```
-src/core/
-  domain/        — circuit types, AST, graph, document, commands, validation
-  state/          — reactive store with undo/redo
-  parser-bridge/  — lexer, parser, serializer, validator
-  layout/         — automatic node positioning
-  render-svg/     — SVG generation, themes, viewport
-  editor/         — editor controller, toolbar, panels, interaction
-src/adapters/     — React, Vue, Angular, Astro, Svelte, Vanilla
+
+## Release Workflow
+
+CI runs in GitHub Actions on Node 22 and 24. npm publish is triggered by pushing a tag like `v0.2.0`.
+
+You can prepare and dispatch a release with:
+
+```bash
+pnpm release:prepare -- 0.2.0
 ```
+
+What it does:
+
+- runs `typecheck`, `test`, and `build`
+- bumps `package.json` and `package-lock.json` to the provided version
+- creates commit `chore(release): vX.Y.Z`
+- creates tag `vX.Y.Z`
+- pushes branch and tag to GitHub
+
+Required GitHub secret for publish workflow: `NPM_TOKEN`.
 
 ## License
 
-MIT
+[MIT](./LICENSE)
