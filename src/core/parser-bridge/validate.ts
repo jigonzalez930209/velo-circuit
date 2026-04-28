@@ -1,6 +1,6 @@
 import type { CircuitNode } from '../domain/circuit.js';
 import type { ValidationResult, ValidationIssue, ValidationError, ValidationWarning } from '../domain/validation.js';
-import { traverseNodes } from '../domain/circuit.js';
+import { ELEMENT_KINDS, nParams, traverseNodes } from '../domain/circuit.js';
 
 /**
  * Comprehensive circuit validator.
@@ -15,7 +15,7 @@ import { traverseNodes } from '../domain/circuit.js';
  *
  * Warnings:
  * - no-dc-path: no resistive element in the circuit
- * - purely-reactive: circuit is purely reactive (only C/L/Q)
+ * - purely-reactive: circuit is purely reactive/diffusive without a DC path
  * - warburg-inductor-parallel: Warburg in parallel with inductor (non-physical)
  * - single-element-circuit: circuit consists of a single element
  */
@@ -32,7 +32,7 @@ export function validate(ast: CircuitNode): ValidationResult {
     issues.push({
       type: 'error',
       kind: 'empty-circuit',
-      message: 'Circuit has no elements. Add at least one element (R, C, L, Q, W, Ws, Wo).',
+      message: 'Circuit has no elements. Add at least one element (R, C, L, Q, W, Ws, Wo, G, Pdw).',
     });
     return buildResult(issues);
   }
@@ -52,10 +52,13 @@ export function validate(ast: CircuitNode): ValidationResult {
   // 4. Duplicate ID detection
   validateDuplicateIds(ast, issues);
 
-  // 5. Physical validity: DC path check
+  // 5. Optional embedded parameter-vector validation
+  validateElementParameters(ast, issues);
+
+  // 6. Physical validity: DC path check
   validateDcPath(ast, issues);
 
-  // 6. Physical validity: conflicting reactive elements
+  // 7. Physical validity: conflicting reactive elements
   validateConflictingReactive(ast, issues);
 
   return buildResult(issues);
@@ -101,6 +104,64 @@ function validateStructure(node: CircuitNode, issues: ValidationIssue[], path: s
     for (let i = 0; i < node.children.length; i++) {
       validateStructure(node.children[i], issues, `${path}.parallel[${i}]`);
     }
+  }
+}
+
+function validateElementParameters(ast: CircuitNode, issues: ValidationIssue[]): void {
+  traverseNodes(ast, (node) => {
+    if (node.type !== 'element' || !node.params) return;
+
+    const expected = nParams(node.kind);
+    if (node.params.length !== expected) {
+      issues.push({
+        type: 'error',
+        kind: 'parameter-count',
+        message: `Element ${node.kind}${node.id} expects ${expected} parameter(s), found ${node.params.length}.`,
+        elementKind: node.kind,
+        elementId: node.id,
+      });
+      return;
+    }
+
+    const reason = invalidParameterReason(node.kind as string, node.params);
+    if (reason) {
+      issues.push({
+        type: 'error',
+        kind: 'invalid-parameters',
+        message: `Invalid parameters for ${ELEMENT_KINDS.get(node.kind)?.label ?? node.kind}: ${reason}.`,
+        elementKind: node.kind,
+        elementId: node.id,
+      });
+    }
+  });
+}
+
+function invalidParameterReason(kind: string, params: number[]): string | null {
+  if (params.some(value => !Number.isFinite(value))) return 'all parameters must be finite';
+
+  switch (kind) {
+    case 'R':
+      return params[0] > 0 ? null : 'R must be > 0';
+    case 'C':
+      return params[0] > 0 ? null : 'C must be > 0';
+    case 'L':
+      return params[0] > 0 ? null : 'L must be > 0';
+    case 'W':
+      return params[0] > 0 ? null : 'sigma must be > 0';
+    case 'Q':
+      return params[0] > 0 && params[1] > 0 && params[1] <= 1
+        ? null
+        : 'Q0 must be > 0 and 0 < n <= 1';
+    case 'Ws':
+    case 'Wo':
+    case 'G':
+      return params.every(value => value > 0) ? null : 'all element parameters must be > 0';
+    case 'Pdw':
+      return params[0] > 0 && params[1] > 0 && params[3] > 0 && params[2] > 0 && params[2] < 1
+        ? null
+        : 'D1,D2,Lambda must be > 0 and 0 < theta < 1';
+    default:
+      return null;
   }
 }
 
@@ -150,13 +211,13 @@ function validateDcPath(ast: CircuitNode, issues: ValidationIssue[]): void {
     issues.push({
       type: 'warning',
       kind: 'no-dc-path',
-      message: 'Circuit has no resistive path (R, W, Ws, or Wo). This circuit is unphysical at DC (ω→0).',
+      message: 'Circuit has no DC path (R, W, Ws, or Wo). This circuit may be unphysical at DC (ω→0).',
     });
 
     issues.push({
       type: 'warning',
       kind: 'purely-reactive',
-      message: 'Circuit contains only reactive elements (C, L, Q). Consider adding a resistor for physical validity.',
+      message: 'Circuit contains only reactive or diffusion elements. Consider adding a resistor for physical validity.',
     });
   }
 }
@@ -173,7 +234,7 @@ function validateConflictingReactive(ast: CircuitNode, issues: ValidationIssue[]
       }
     }
 
-    const hasWarburg = kinds.has('W') || kinds.has('Ws') || kinds.has('Wo');
+    const hasWarburg = kinds.has('W') || kinds.has('Ws') || kinds.has('Wo') || kinds.has('Pdw');
     const hasInductor = kinds.has('L');
 
     if (hasWarburg && hasInductor) {

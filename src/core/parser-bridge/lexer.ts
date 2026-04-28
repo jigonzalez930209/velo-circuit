@@ -11,6 +11,8 @@ export interface LexError {
   message: string;
 }
 
+const ELEMENT_CODES = ['Pdw', 'Ws', 'Wo', 'R', 'C', 'L', 'Q', 'W', 'G'];
+
 export function tokenize(input: string): Token[] | LexError {
   const tokens: Token[] = [];
   let i = 0;
@@ -65,17 +67,11 @@ export function tokenize(input: string): Token[] | LexError {
       continue;
     }
 
-    if (/[RCLQW]/.test(ch)) {
-      let code = ch;
-
-      if ((ch === 'W') && (input[i + 1] === 's' || input[i + 1] === 'o')) {
-        code = ch + input[i + 1];
-        tokens.push({ type: 'element-code', value: code, position: i });
-        i += 2;
-      } else {
-        tokens.push({ type: 'element-code', value: code, position: i });
-        i++;
-      }
+    const code = ELEMENT_CODES.find(candidate => input.startsWith(candidate, i));
+    if (code) {
+      const codePosition = i;
+      tokens.push({ type: 'element-code', value: code, position: codePosition });
+      i += code.length;
 
       let numStr = '';
       while (i < input.length && /\d/.test(input[i])) {
@@ -84,7 +80,7 @@ export function tokenize(input: string): Token[] | LexError {
       }
 
       if (numStr === '') {
-        return { type: 'lex', position: i, found: ch, message: `Element code '${code}' must be followed by a numeric id` };
+        return { type: 'lex', position: i, found: code, message: `Element code '${code}' must be followed by a numeric id` };
       }
 
       tokens.push({ type: 'element-id', value: numStr, position: i - numStr.length });

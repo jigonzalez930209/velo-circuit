@@ -2,6 +2,8 @@ import type { CircuitNode, ElementKind } from '../domain/circuit.js';
 import type { Token, LexError } from './lexer.js';
 import { tokenize } from './lexer.js';
 
+const ELEMENT_CODE_LIST = 'R, C, L, Q, W, Ws, Wo, G, Pdw';
+
 export interface ParseError {
   type: 'parse';
   position: number;
@@ -21,6 +23,8 @@ function kindFromCode(code: string): ElementKind {
     case 'W': return 'W' as ElementKind;
     case 'Ws': return 'Ws' as ElementKind;
     case 'Wo': return 'Wo' as ElementKind;
+    case 'G': return 'G' as ElementKind;
+    case 'Pdw': return 'Pdw' as ElementKind;
     default:
       throw new Error(`Unknown element code: ${code}`);
   }
@@ -117,7 +121,7 @@ class Parser {
           position: this.input.length,
           expected: 'element or parallel group',
           found: 'end of input',
-          message: 'Unexpected end of input after series operator "-". Expected an element (R, C, L, Q, W, Ws, Wo) or parallel group p(...)',
+          message: `Unexpected end of input after series operator "-". Expected an element (${ELEMENT_CODE_LIST}) or parallel group p(...)`,
         };
         throw err;
       }
@@ -138,7 +142,7 @@ class Parser {
         position: this.input.length,
         expected: 'element or parallel group',
         found: 'end of input',
-        message: 'Unexpected end of input. Expected an element code (R, C, L, Q, W, Ws, Wo) or parallel group p(...)',
+        message: `Unexpected end of input. Expected an element code (${ELEMENT_CODE_LIST}) or parallel group p(...)`,
       };
       throw err;
     }
@@ -151,7 +155,7 @@ class Parser {
       position: tok.position,
       expected: 'element or parallel group',
       found: tok.value,
-      message: `Unexpected token '${tok.value}' at position ${tok.position}. Expected an element code (R, C, L, Q, W, Ws, Wo) or parallel group p(...)`,
+      message: `Unexpected token '${tok.value}' at position ${tok.position}. Expected an element code (${ELEMENT_CODE_LIST}) or parallel group p(...)`,
     };
     throw err;
   }
@@ -204,7 +208,7 @@ class Parser {
   }
 
   parseElement(): CircuitNode {
-    const codeTok = this.expectType('element-code', 'Expected element code (R, C, L, Q, W, Ws, Wo)');
+    const codeTok = this.expectType('element-code', `Expected element code (${ELEMENT_CODE_LIST})`);
     const idTok = this.expectType('element-id', `Expected numeric id after element code "${codeTok.value}" (e.g. ${codeTok.value}0, ${codeTok.value}1)`);
 
     const kind = kindFromCode(codeTok.value);
