@@ -5,15 +5,8 @@ outline: false
 pageClass: full-width-page
 ---
 
-Use this playground to validate DSL circuits before integrating with `velo-spectroz`.
-
-- Live visual rendering from Boukamp DSL
-- Diagnostics panel for parser/validation feedback
-- Framework previews for React, Vue, Svelte, Angular, Astro, and Vanilla
-- Quick SVG/DSL export buttons for prototyping
-
 <CircuitPlayground 
-  title="Interactive Circuit Editor" 
-  height="600px"
+  title="Interactive Circuit Editor"
   initial-circuit="randles"
+  height="calc(100dvh - var(--vp-nav-height, 64px) - 24px)"
 />
