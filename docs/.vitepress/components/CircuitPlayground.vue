@@ -17,7 +17,7 @@ const props = withDefaults(defineProps<{
   height?: string;
 }>(), {
   title: 'Circuit Playground',
-  height: '500px',
+  height: 'calc(100dvh - var(--vp-nav-height, 64px) - 24px)',
 });
 
 const { isDark } = useData();
@@ -173,7 +173,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="playground-wrapper">
+  <div class="playground-wrapper" :style="{ height }">
     <div class="playground-chrome">
       <div class="chrome-dots">
         <span class="chrome-dot chrome-dot--red"></span>
@@ -264,14 +264,15 @@ onMounted(async () => {
 
 <style scoped>
 .playground-wrapper {
-  margin: 2rem 0;
-  border-radius: 12px;
+  margin: 0;
+  border-radius: 0px;
   overflow: hidden;
   border: 1px solid var(--vp-c-divider);
   background: var(--vp-c-bg);
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .horizontal-panels {
@@ -429,17 +430,25 @@ onMounted(async () => {
 
 .playground-main {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .playground-canvas {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
 }
 
 .framework-mount-point {
   width: 100%;
   background: #f0f2f5;
   flex: 1;
+  min-height: 0;
 }
 .dark .framework-mount-point { background: #0f172a; }
 
