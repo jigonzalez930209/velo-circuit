@@ -5,6 +5,9 @@ const CSS = `
   width: 300px; border-left: 1px solid var(--ce-border);
   overflow-y: auto; background: var(--ce-surface); display: flex; flex-direction: column;
 }
+@media (max-width: 1000px) {
+  .ce-sidebar { display: none !important; }
+}
 .ce-panel { border-bottom: 1px solid var(--ce-border); }
 .ce-panel-header {
   display: flex; align-items: center; justify-content: space-between;
