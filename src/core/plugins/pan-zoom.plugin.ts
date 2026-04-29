@@ -4,12 +4,22 @@ const CSS = `
 .ce-canvas {
   flex: 1; position: relative; overflow: hidden; cursor: grab;
   background-color: var(--ce-bg);
+  touch-action: none;
 }
 .ce-canvas.ce-panning { cursor: grabbing; }
 .ce-canvas svg {
   position: absolute; top: 0; left: 0;
-  transform-origin: 0 0;
-  will-change: transform;
+  overflow: visible;
+}
+.ce-canvas svg text {
+  text-rendering: geometricPrecision;
+}
+.ce-canvas svg path,
+.ce-canvas svg line,
+.ce-canvas svg polyline,
+.ce-canvas svg circle,
+.ce-canvas svg rect {
+  shape-rendering: geometricPrecision;
 }
 .ce-grid-container {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
@@ -38,8 +48,12 @@ export function panZoomPlugin(): PanZoomPluginAPI {
   let ctx: PluginContext;
   let canvasEl: HTMLDivElement;
   let zoomLabelEl: HTMLDivElement;
+  let canvasResizeObserver: ResizeObserver | null = null;
   let zoom = 1, panX = 0, panY = 0;
   let isPanning = false, panStartX = 0, panStartY = 0;
+  const activePointers = new Map<number, { x: number; y: number }>();
+  let pinchDistance = 0;
+  let pinchMid = { x: 0, y: 0 };
   let contentBBox = { x: 0, y: 0, width: 0, height: 0 };
   const MIN_ZOOM = 0.25, MAX_ZOOM = 4.0;
   const MIN_PAN_MARGIN = 50;
@@ -64,7 +78,11 @@ export function panZoomPlugin(): PanZoomPluginAPI {
 
   function applyTransform() {
     const svg = canvasEl.querySelector('svg');
-    if (svg) svg.style.transform = `translate(${panX}px,${panY}px) scale(${zoom})`;
+    const scene = svg?.querySelector('#scene');
+    if (scene instanceof SVGGElement) {
+      // Keep pan/zoom in SVG space to preserve vector sharpness at high zoom.
+      scene.setAttribute('transform', `matrix(${zoom} 0 0 ${zoom} ${panX} ${panY})`);
+    }
     zoomLabelEl.textContent = Math.round(zoom * 100) + '%';
     ctx.emit('viewport-changed', { zoom, panX, panY });
   }
@@ -135,6 +153,24 @@ export function panZoomPlugin(): PanZoomPluginAPI {
   }
 
   function onPointerDown(e: PointerEvent) {
+    if (e.pointerType === 'touch') {
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      canvasEl.setPointerCapture(e.pointerId);
+      const nodeEl = (e.target as Element).closest?.('[data-element-id]');
+
+      if (activePointers.size >= 2) {
+        isPanning = false;
+        const points = Array.from(activePointers.values());
+        const a = points[0];
+        const b = points[1];
+        pinchDistance = Math.hypot(b.x - a.x, b.y - a.y);
+        pinchMid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      } else if (!nodeEl) {
+        startPan(e);
+      }
+      return;
+    }
+
     // Middle-click or Alt+click → always pan
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
       startPan(e); return;
@@ -154,6 +190,49 @@ export function panZoomPlugin(): PanZoomPluginAPI {
   }
 
   function onPointerMove(e: PointerEvent) {
+    if (e.pointerType === 'touch' && activePointers.has(e.pointerId)) {
+      const prev = activePointers.get(e.pointerId)!;
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (activePointers.size >= 2) {
+        isPanning = false;
+        const points = Array.from(activePointers.values());
+        const a = points[0];
+        const b = points[1];
+        const dist = Math.hypot(b.x - a.x, b.y - a.y);
+        const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+
+        const rect = canvasEl.getBoundingClientRect();
+        const mx = mid.x - rect.left;
+        const my = mid.y - rect.top;
+
+        // Two-finger drag pans the view.
+        panX += mid.x - pinchMid.x;
+        panY += mid.y - pinchMid.y;
+
+        // Two-finger pinch zooms around gesture midpoint.
+        if (pinchDistance > 0) {
+          const oldZ = zoom;
+          const factor = dist / pinchDistance;
+          zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
+          panX = mx - (mx - panX) * (zoom / oldZ);
+          panY = my - (my - panY) * (zoom / oldZ);
+        }
+
+        pinchDistance = dist;
+        pinchMid = mid;
+        applyTransform();
+        return;
+      }
+
+      if (isPanning) {
+        panX += e.clientX - prev.x;
+        panY += e.clientY - prev.y;
+        applyTransform();
+      }
+      return;
+    }
+
     if (!isPanning) return;
     panX += e.clientX - panStartX;
     panY += e.clientY - panStartY;
@@ -164,11 +243,31 @@ export function panZoomPlugin(): PanZoomPluginAPI {
   }
 
   function onPointerUp(e: PointerEvent) {
+    if (activePointers.has(e.pointerId)) {
+      activePointers.delete(e.pointerId);
+      if (activePointers.size < 2) pinchDistance = 0;
+    }
+    if (canvasEl.hasPointerCapture?.(e.pointerId)) {
+      canvasEl.releasePointerCapture(e.pointerId);
+    }
     if (isPanning) {
       isPanning = false;
       canvasEl.classList.remove('ce-panning');
-      canvasEl.releasePointerCapture(e.pointerId);
     }
+  }
+
+  function syncViewportSizeFromCanvas() {
+    const rect = canvasEl.getBoundingClientRect();
+    const width = Math.max(1, Math.floor(rect.width));
+    const height = Math.max(1, Math.floor(rect.height));
+    ctx.editor.dispatch({
+      type: 'viewport-change',
+      panX,
+      panY,
+      zoom,
+      width,
+      height,
+    });
   }
 
   return {
@@ -194,6 +293,13 @@ export function panZoomPlugin(): PanZoomPluginAPI {
       canvasEl.addEventListener('pointerdown', onPointerDown);
       canvasEl.addEventListener('pointermove', onPointerMove);
       canvasEl.addEventListener('pointerup', onPointerUp);
+      canvasEl.addEventListener('pointercancel', onPointerUp);
+
+      canvasResizeObserver = new ResizeObserver(() => {
+        syncViewportSizeFromCanvas();
+      });
+      canvasResizeObserver.observe(canvasEl);
+      syncViewportSizeFromCanvas();
 
       // Re-apply transform after re-render (SVG is recreated each time)
       let firstRender = true;
@@ -215,10 +321,15 @@ export function panZoomPlugin(): PanZoomPluginAPI {
       ctx.on('reset-view', () => resetView());
     },
     destroy() {
+      if (canvasResizeObserver) {
+        canvasResizeObserver.disconnect();
+        canvasResizeObserver = null;
+      }
       canvasEl?.removeEventListener('wheel', onWheel);
       canvasEl?.removeEventListener('pointerdown', onPointerDown);
       canvasEl?.removeEventListener('pointermove', onPointerMove);
       canvasEl?.removeEventListener('pointerup', onPointerUp);
+      canvasEl?.removeEventListener('pointercancel', onPointerUp);
       canvasEl?.remove();
     },
     getZoom: () => zoom,
