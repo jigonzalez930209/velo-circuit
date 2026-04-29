@@ -55,11 +55,47 @@ const CSS = `
   transition: all .12s;
 }
 .ce-tb-theme:hover { background: var(--ce-hover); }
+.ce-tb-dsl-mobile {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+.ce-tb-dsl-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 5px 8px;
+  border: 1px solid var(--ce-border);
+  border-radius: 6px;
+  background: var(--ce-bg);
+  color: var(--ce-text);
+  font: 500 12px var(--ce-font-mono);
+}
+.ce-tb-dsl-input:focus {
+  outline: none;
+  border-color: var(--ce-accent);
+  box-shadow: 0 0 0 2px var(--ce-accent-alpha);
+}
+@media (max-width: 1000px) {
+  .ce-toolbar {
+    gap: 5px;
+    padding: 6px 8px;
+  }
+  .ce-tb-sep {
+    display: none;
+  }
+  .ce-tb-dsl-mobile {
+    display: flex;
+    order: 100;
+    margin-top: 4px;
+  }
+}
 `;
 
 export function toolbarPlugin(): EditorPlugin {
   let ctx: PluginContext;
   let barEl: HTMLDivElement;
+  let dslInputEl: HTMLInputElement | null = null;
   let insertMode: 'series' | 'parallel' = 'series';
   let selectedId: string | null = null;
 
@@ -88,7 +124,12 @@ export function toolbarPlugin(): EditorPlugin {
         </div>
         <div class="ce-tb-sep"></div>
         <button class="ce-tb-action" data-act="params" title="Toggle parameters visibility">[P] Params</button>
-        <button class="ce-tb-theme" data-act="theme" title="Toggle theme">🌓</button>`;
+        <button class="ce-tb-theme" data-act="theme" title="Toggle theme">🌓</button>
+        <div class="ce-tb-dsl-mobile">
+          <span class="ce-tb-label">Boukamp DSL</span>
+          <input class="ce-tb-dsl-input" type="text" spellcheck="false" />
+          <button class="ce-tb-action" data-act="apply-dsl">Apply</button>
+        </div>`;
 
       // Element buttons
       barEl.querySelectorAll('.ce-tb-el').forEach(btn => {
@@ -117,6 +158,23 @@ export function toolbarPlugin(): EditorPlugin {
       barEl.querySelector('[data-act="undo"]')?.addEventListener('click', () => ctx.editor.undo());
       barEl.querySelector('[data-act="redo"]')?.addEventListener('click', () => ctx.editor.redo());
       barEl.querySelector('[data-act="theme"]')?.addEventListener('click', () => ctx.emit('toggle-theme'));
+      barEl.querySelector('[data-act="apply-dsl"]')?.addEventListener('click', () => {
+        if (dslInputEl) ctx.editor.setValue(dslInputEl.value.trim());
+      });
+
+      dslInputEl = barEl.querySelector('.ce-tb-dsl-input') as HTMLInputElement | null;
+      if (dslInputEl) {
+        dslInputEl.value = ctx.editor.getValue();
+        dslInputEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            ctx.editor.setValue(dslInputEl!.value.trim());
+          }
+        });
+        dslInputEl.addEventListener('blur', () => {
+          ctx.editor.setValue(dslInputEl!.value.trim());
+        });
+      }
 
       const paramsBtn = barEl.querySelector('[data-act="params"]') as HTMLButtonElement;
       paramsBtn?.addEventListener('click', () => {
@@ -128,6 +186,9 @@ export function toolbarPlugin(): EditorPlugin {
 
       // Track selection
       ctx.on('selection-changed', (data) => { selectedId = (data as string) ?? null; });
+      ctx.editor.on('ast-changed', () => {
+        if (dslInputEl) dslInputEl.value = ctx.editor.getValue();
+      });
     },
     destroy() {
       barEl?.remove();
