@@ -131,8 +131,10 @@ export function renderCircuit(
     .circuit-connection:hover { stroke: ${theme.colors.highlight}; stroke-width: 2; }
     .circuit-junction { pointer-events: none; }
   </style>
-  <g id="connections">${connectionElements.join('')}</g>
-  <g id="nodes">${nodeElements.join('')}</g>
+  <g id="scene">
+    <g id="connections">${connectionElements.join('')}</g>
+    <g id="nodes">${nodeElements.join('')}</g>
+  </g>
 </svg>`.trim();
 }
 
