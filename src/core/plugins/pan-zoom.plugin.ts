@@ -49,6 +49,7 @@ export function panZoomPlugin(): PanZoomPluginAPI {
   let canvasEl: HTMLDivElement;
   let zoomLabelEl: HTMLDivElement;
   let canvasResizeObserver: ResizeObserver | null = null;
+  let removeWindowResizeListener: (() => void) | null = null;
   let zoom = 1, panX = 0, panY = 0;
   let isPanning = false, panStartX = 0, panStartY = 0;
   const activePointers = new Map<number, { x: number; y: number }>();
@@ -295,10 +296,16 @@ export function panZoomPlugin(): PanZoomPluginAPI {
       canvasEl.addEventListener('pointerup', onPointerUp);
       canvasEl.addEventListener('pointercancel', onPointerUp);
 
-      canvasResizeObserver = new ResizeObserver(() => {
-        syncViewportSizeFromCanvas();
-      });
-      canvasResizeObserver.observe(canvasEl);
+      if (typeof ResizeObserver !== 'undefined') {
+        canvasResizeObserver = new ResizeObserver(() => {
+          syncViewportSizeFromCanvas();
+        });
+        canvasResizeObserver.observe(canvasEl);
+      } else if (typeof window !== 'undefined') {
+        const onWindowResize = () => syncViewportSizeFromCanvas();
+        window.addEventListener('resize', onWindowResize);
+        removeWindowResizeListener = () => window.removeEventListener('resize', onWindowResize);
+      }
       syncViewportSizeFromCanvas();
 
       // Re-apply transform after re-render (SVG is recreated each time)
@@ -324,6 +331,10 @@ export function panZoomPlugin(): PanZoomPluginAPI {
       if (canvasResizeObserver) {
         canvasResizeObserver.disconnect();
         canvasResizeObserver = null;
+      }
+      if (removeWindowResizeListener) {
+        removeWindowResizeListener();
+        removeWindowResizeListener = null;
       }
       canvasEl?.removeEventListener('wheel', onWheel);
       canvasEl?.removeEventListener('pointerdown', onPointerDown);
